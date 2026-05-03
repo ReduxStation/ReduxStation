@@ -15,25 +15,30 @@ on:
 jobs:
   compile-maps:
     name: Compile All Maps
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    container:
+      image: debian:12-slim
+
     steps:
+      - name: Install system packages
+        run: |
+          dpkg --add-architecture i386
+          apt-get update -qq
+          apt-get install -y --no-install-recommends \
+            ca-certificates curl unzip make git python3 \
+            libc6:i386 libstdc++6:i386 libgcc-s1:i386 libssl3:i386 libcurl4:i386
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: true
 
-      - name: Install 32-bit dependencies
-        run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update -qq
-          sudo apt-get install -y libstdc++6:i386
-
       - name: Cache BYOND
         id: cache-byond
         uses: actions/cache@v4
         with:
-          path: ~/BYOND
-          key: byond-${{ hashFiles('dependencies.sh') }}
+          path: /root/BYOND
+          key: debian12-byond-${{ hashFiles('dependencies.sh') }}
 
       - name: Install BYOND
         if: steps.cache-byond.outputs.cache-hit != 'true'
@@ -41,7 +46,7 @@ jobs:
 
       - name: Configure BYOND environment
         run: |
-          source ~/BYOND/byond/bin/byondsetup
+          source /root/BYOND/byond/bin/byondsetup
           echo "PATH=$PATH" >> $GITHUB_ENV
 
       - name: Generate template DM includes
