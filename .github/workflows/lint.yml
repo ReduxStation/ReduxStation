@@ -32,6 +32,7 @@ jobs:
           source ~/.nvm/nvm.sh
           nvm install 12
           nvm use 12
+          npm install -g yarn webpack-cli@3
           node --version
 
       - name: Install Python packages

@@ -64,6 +64,7 @@ jobs:
         run: |
           source ~/BYOND/byond/bin/byondsetup
           echo "PATH=$PATH" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
       - name: Create test databases
         run: |

@@ -51,6 +51,7 @@ jobs:
         run: |
           source ~/BYOND/byond/bin/byondsetup
           echo "PATH=$PATH" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
       - name: Generate template DM includes
         run: python3 tools/travis/template_dm_generator.py
