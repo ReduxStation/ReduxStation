@@ -27,10 +27,12 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
+      - name: Setup Node 12
+        run: |
+          source ~/.nvm/nvm.sh
+          nvm install 12
+          nvm use 12
+          node --version
 
       - name: Install Python packages
         run: pip3 install PyYaml beautifulsoup4 'ruamel.yaml>=0.15'

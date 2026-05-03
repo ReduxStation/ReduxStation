@@ -18,6 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: debian:12-slim
+    defaults:
+      run:
+        shell: bash
 
     services:
       mariadb:
