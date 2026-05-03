@@ -40,16 +40,16 @@ jobs:
         id: cache-byond
         uses: actions/cache@v4
         with:
-          path: /root/BYOND
-          key: debian12-byond-${{ hashFiles('dependencies.sh') }}
+          path: ~/BYOND
+          key: debian12-byond-v2-${{ hashFiles('dependencies.sh') }}
 
       - name: Install BYOND
         if: steps.cache-byond.outputs.cache-hit != 'true'
-        run: bash tools/travis/install_byond.sh
+        run: tools/travis/install_byond.sh
 
       - name: Configure BYOND environment
         run: |
-          source /root/BYOND/byond/bin/byondsetup
+          source ~/BYOND/byond/bin/byondsetup
           echo "PATH=$PATH" >> $GITHUB_ENV
 
       - name: Generate template DM includes
