@@ -1,0 +1,73 @@
+name: Linters
+
+on:
+  push:
+    branches-ignore:
+      - '___TGS3TempBranch'
+      - '___TGSTempBranch'
+      - '___TGSUpdateBranch'
+  pull_request:
+    branches-ignore:
+      - '___TGS3TempBranch'
+      - '___TGSTempBranch'
+      - '___TGSUpdateBranch'
+
+jobs:
+  lint:
+    name: Run Linters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Python packages
+        run: pip3 install PyYaml beautifulsoup4 'ruamel.yaml>=0.15'
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Cache SpacemanDMM
+        id: cache-sdmm
+        uses: actions/cache@v4
+        with:
+          path: ~/dreamchecker
+          key: spacemandmm-${{ hashFiles('dependencies.sh') }}
+
+      - name: Install dreamchecker
+        if: steps.cache-sdmm.outputs.cache-hit != 'true'
+        run: tools/travis/install_spaceman_dmm.sh dreamchecker
+
+      - name: Check file-dirs
+        run: tools/travis/check_filedirs.sh hippiestation.dme
+
+      - name: Check changelogs
+        run: tools/travis/check_changelogs.sh
+
+      - name: Lint PHP
+        run: find . -name "*.php" -print0 | xargs -0 -n1 php -l
+
+      - name: Lint JSON
+        run: find . -name "*.json" -not -path "*/node_modules/*" -print0 | xargs -0 python3 ./tools/json_verifier.py
+
+      - name: Build TGUI
+        run: tools/travis/build_tgui.sh
+
+      - name: Check grep patterns
+        run: tools/travis/check_grep.sh
+
+      - name: Run dreamchecker
+        run: ~/dreamchecker

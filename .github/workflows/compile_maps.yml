@@ -1,0 +1,51 @@
+name: Compile Maps
+
+on:
+  push:
+    branches-ignore:
+      - '___TGS3TempBranch'
+      - '___TGSTempBranch'
+      - '___TGSUpdateBranch'
+  pull_request:
+    branches-ignore:
+      - '___TGS3TempBranch'
+      - '___TGSTempBranch'
+      - '___TGSUpdateBranch'
+
+jobs:
+  compile-maps:
+    name: Compile All Maps
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install 32-bit dependencies
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -y libstdc++6:i386
+
+      - name: Cache BYOND
+        id: cache-byond
+        uses: actions/cache@v4
+        with:
+          path: ~/BYOND
+          key: byond-${{ hashFiles('dependencies.sh') }}
+
+      - name: Install BYOND
+        if: steps.cache-byond.outputs.cache-hit != 'true'
+        run: tools/travis/install_byond.sh
+
+      - name: Configure BYOND environment
+        run: |
+          source ~/BYOND/byond/bin/byondsetup
+          echo "PATH=$PATH" >> $GITHUB_ENV
+
+      - name: Generate template DM includes
+        run: tools/travis/template_dm_generator.py
+
+      - name: Compile all maps
+        run: tools/travis/dm.sh -DTRAVISBUILDING -DTRAVISTESTING -DALL_MAPS hippiestation.dme

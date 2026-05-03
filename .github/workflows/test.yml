@@ -1,0 +1,75 @@
+name: Compile and Run Tests
+
+on:
+  push:
+    branches-ignore:
+      - '___TGS3TempBranch'
+      - '___TGSTempBranch'
+      - '___TGSUpdateBranch'
+  pull_request:
+    branches-ignore:
+      - '___TGS3TempBranch'
+      - '___TGSTempBranch'
+      - '___TGSUpdateBranch'
+
+jobs:
+  test:
+    name: Compile and Run Tests
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: tg_travis
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install 32-bit dependencies
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            libmariadb3:i386 \
+            libstdc++6:i386 \
+            libssl3:i386 \
+            libcurl4:i386 \
+            zlib1g:i386
+
+      - name: Cache BYOND
+        id: cache-byond
+        uses: actions/cache@v4
+        with:
+          path: ~/BYOND
+          key: byond-${{ hashFiles('dependencies.sh') }}
+
+      - name: Install BYOND
+        if: steps.cache-byond.outputs.cache-hit != 'true'
+        run: tools/travis/install_byond.sh
+
+      - name: Configure BYOND environment
+        run: |
+          source ~/BYOND/byond/bin/byondsetup
+          echo "PATH=$PATH" >> $GITHUB_ENV
+
+      - name: Create test databases
+        run: |
+          mysql -u root -h 127.0.0.1 -e 'CREATE DATABASE tg_travis_prefixed;'
+          mysql -u root -h 127.0.0.1 tg_travis < SQL/tgstation_schema.sql
+          mysql -u root -h 127.0.0.1 tg_travis_prefixed < SQL/tgstation_schema_prefixed.sql
+
+      - name: Compile game
+        run: tools/travis/dm.sh -DTRAVISBUILDING hippiestation.dme
+
+      - name: Run server tests
+        run: tools/travis/run_server.sh
