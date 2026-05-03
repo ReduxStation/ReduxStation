@@ -49,13 +49,13 @@ jobs:
 
       - name: Install dreamchecker
         if: steps.cache-sdmm.outputs.cache-hit != 'true'
-        run: tools/travis/install_spaceman_dmm.sh dreamchecker
+        run: bash tools/travis/install_spaceman_dmm.sh dreamchecker
 
       - name: Check file-dirs
-        run: tools/travis/check_filedirs.sh hippiestation.dme
+        run: bash tools/travis/check_filedirs.sh hippiestation.dme
 
       - name: Check changelogs
-        run: tools/travis/check_changelogs.sh
+        run: bash tools/travis/check_changelogs.sh
 
       - name: Lint PHP
         run: find . -name "*.php" -print0 | xargs -0 -n1 php -l
@@ -64,10 +64,10 @@ jobs:
         run: find . -name "*.json" -not -path "*/node_modules/*" -print0 | xargs -0 python3 ./tools/json_verifier.py
 
       - name: Build TGUI
-        run: tools/travis/build_tgui.sh
+        run: bash tools/travis/build_tgui.sh
 
       - name: Check grep patterns
-        run: tools/travis/check_grep.sh
+        run: bash tools/travis/check_grep.sh
 
       - name: Run dreamchecker
         run: ~/dreamchecker

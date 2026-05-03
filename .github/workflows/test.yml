@@ -15,7 +15,7 @@ on:
 jobs:
   test:
     name: Compile and Run Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     services:
       mariadb:
         image: mariadb:10.11
@@ -55,7 +55,7 @@ jobs:
 
       - name: Install BYOND
         if: steps.cache-byond.outputs.cache-hit != 'true'
-        run: tools/travis/install_byond.sh
+        run: bash tools/travis/install_byond.sh
 
       - name: Configure BYOND environment
         run: |
@@ -69,7 +69,7 @@ jobs:
           mysql -u root -h 127.0.0.1 tg_travis_prefixed < SQL/tgstation_schema_prefixed.sql
 
       - name: Compile game
-        run: tools/travis/dm.sh -DTRAVISBUILDING hippiestation.dme
+        run: bash tools/travis/dm.sh -DTRAVISBUILDING hippiestation.dme
 
       - name: Run server tests
-        run: tools/travis/run_server.sh
+        run: bash tools/travis/run_server.sh
