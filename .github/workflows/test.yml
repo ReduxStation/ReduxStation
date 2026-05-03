@@ -42,7 +42,7 @@ jobs:
           apt-get install -y --no-install-recommends \
             ca-certificates curl unzip make git default-mysql-client \
             libc6:i386 libstdc++6:i386 libgcc-s1:i386 \
-            libmariadb3:i386 libssl3:i386 libcurl4:i386 zlib1g:i386
+            libmariadb3:i386 libsqlite3-0:i386 libssl3:i386 libcurl4:i386 zlib1g:i386
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,6 +66,47 @@ jobs:
           echo "PATH=$PATH" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
+      - name: Scatter native binaries
+        # Mirrors the runtime stage of the Dockerfile exactly.
+        # rust_g, libBSQL.so, libquickwrite.so are committed to the repo root —
+        # no downloads needed. Scatter them to every path dlopen("rust_g") etc.
+        # might search: BYOND's own bin dir, standard lib paths, and the game dir.
+        run: |
+          BYOND_BIN="$HOME/BYOND/byond/bin"
+          GAME_DIR="$GITHUB_WORKSPACE"
+
+          # rust_g — dlopen("rust_g") searches LD_LIBRARY_PATH first
+          cp "$GAME_DIR/rust_g" "$BYOND_BIN/rust_g"
+          cp "$GAME_DIR/rust_g" "$BYOND_BIN/rust_g.so"
+          cp "$GAME_DIR/rust_g" "$BYOND_BIN/librust_g.so"
+          cp "$GAME_DIR/rust_g" "$GAME_DIR/rust_g.so"
+          cp "$GAME_DIR/rust_g" "$GAME_DIR/librust_g.so"
+          cp "$GAME_DIR/rust_g" /usr/lib/i386-linux-gnu/rust_g.so
+          cp "$GAME_DIR/rust_g" /usr/lib/i386-linux-gnu/librust_g.so
+          cp "$GAME_DIR/rust_g" /usr/local/lib/rust_g.so
+          cp "$GAME_DIR/rust_g" /usr/local/lib/librust_g.so
+
+          # libBSQL.so — all filename variants BYOND might try
+          cp "$GAME_DIR/libBSQL.so" "$BYOND_BIN/libBSQL.so"
+          cp "$GAME_DIR/libBSQL.so" "$BYOND_BIN/BSQL.so"
+          cp "$GAME_DIR/libBSQL.so" "$BYOND_BIN/BSQL"
+          cp "$GAME_DIR/libBSQL.so" "$GAME_DIR/BSQL.so"
+          cp "$GAME_DIR/libBSQL.so" "$GAME_DIR/BSQL"
+          cp "$GAME_DIR/libBSQL.so" /usr/lib/i386-linux-gnu/libBSQL.so
+          cp "$GAME_DIR/libBSQL.so" /usr/local/lib/libBSQL.so
+
+          # libquickwrite.so
+          cp "$GAME_DIR/libquickwrite.so" "$BYOND_BIN/libquickwrite.so"
+          cp "$GAME_DIR/libquickwrite.so" /usr/lib/i386-linux-gnu/libquickwrite.so
+          cp "$GAME_DIR/libquickwrite.so" /usr/local/lib/libquickwrite.so
+
+          # MariaDB .so.2 compat symlink — BSQL was linked against libmariadb.so.2
+          # on older systems; Debian 12 only ships .so.3
+          ln -sf /usr/lib/i386-linux-gnu/libmariadb.so.3 \
+                 /usr/lib/i386-linux-gnu/libmariadb.so.2
+
+          ldconfig
+
       - name: Create test databases
         run: |
           mysql -u root -h mariadb -e 'CREATE DATABASE tg_travis_prefixed;'
@@ -73,10 +114,10 @@ jobs:
           mysql -u root -h mariadb tg_travis_prefixed < SQL/tgstation_schema_prefixed.sql
 
       - name: Compile game
-        run: bash tools/travis/dm.sh -DTRAVISBUILDING hippiestation.dme
+        run: tools/travis/dm.sh -DTRAVISBUILDING hippiestation.dme
 
       - name: Run server tests
         # Services are reachable by hostname inside a container job, not 127.0.0.1
         run: |
           sed -i 's/ADDRESS 127.0.0.1/ADDRESS mariadb/' tools/travis/travis_config.txt
-          bash tools/travis/run_server.sh
+          tools/travis/run_server.sh
