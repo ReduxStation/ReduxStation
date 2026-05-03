@@ -1,35 +1,43 @@
-.dockerignore
-.editorconfig
-.travis.yml
-GPLv3.txt
-LICENSE
-README.md
-TGS3.json
-.github
-.gitignore
-.gitattributes
+# ── Version control ───────────────────────────────────────────────────────────
+.git
 .git/hooks
 .git/info
 .git/modules
 .git/objects
 .git/refs
-.vs*
-cfg
-data
-SQL
+.gitignore
+.gitattributes
+.github
+
+# ── IDE / editor ──────────────────────────────────────────────────────────────
+.vs
+.vscode
+.editorconfig
+
+# ── CI ────────────────────────────────────────────────────────────────────────
+appveyor.yml
+.travis.yml
+TGS3.json
+
+# ── Node (installed fresh inside the tgui_builder stage) ─────────────────────
 tgui/node_modules
-tgstation.dmb
-tgstation.int
-tgstation.rsc
-tgstation.lk
-tgstation.dyn.rsc
+tgui-next/node_modules
+
+# ── BYOND compile outputs (generated inside dm_compiler stage) ────────────────
 hippiestation.dmb
 hippiestation.int
 hippiestation.rsc
 hippiestation.lk
 hippiestation.dyn.rsc
-libmariadb.dll
-rust_g.dll
-BSQL.dll
-appveyor.yml
-Dockerfile
+
+# ── Windows DLLs (we build .so files from source inside Docker) ───────────────
+*.dll
+
+# ── Runtime data ─────────────────────────────────
+data/
+cfg/
+
+# ── Documentation / chat logs ─────────────────────────────────────────────────
+README.md
+GPLv3.txt
+LICENSE

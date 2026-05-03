@@ -108,6 +108,8 @@
 
 /obj/machinery/power/solar/update_icon()
 	. = ..()
+	if(!panel)
+		return
 	var/matrix/turner = matrix()
 	turner.Turn(azimuth_current)
 	panel.transform = turner

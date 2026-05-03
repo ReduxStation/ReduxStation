@@ -1,7 +1,12 @@
 /turf/open/floor/plating/attackby(obj/item/C, mob/user, params)
 	if(istype(C, /obj/item/stack/tile/mineral/reagent))
 		var/obj/item/stack/tile/mineral/reagent/F = C
-		var/turf/open/floor/mineral/reagent/FT = PlaceOnTop(F.turf_type)
+		if(!F.reagent_type)
+			to_chat(user, "<span class='warning'>These tiles have no reagent type and cannot be placed!</span>")
+			return
+		if(!F.use(1))
+			return
+		var/turf/open/floor/mineral/reagent/FT = PlaceOnTop(F.turf_type, flags = CHANGETURF_INHERIT_AIR)
 		var/paths = subtypesof(/datum/reagent)
 		for(var/path in paths)
 			var/datum/reagent/RR = new path
@@ -13,9 +18,8 @@
 				break
 			else
 				qdel(RR)
-
-		if(!F.use(1))
-			return
+		playsound(FT, 'sound/weapons/genhit.ogg', 50, 1)
+		return
 	..()
 
 /turf/open/floor/plasteel/logo/l1

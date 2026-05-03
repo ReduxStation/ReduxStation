@@ -1,6 +1,10 @@
 //BSQL - DMAPI
 #define BSQL_VERSION "v1.3.0.0"
 
+// Linux only — BYOND 515+ requires a compile-time constant in call_ext()
+#define BSQL_LIB_PATH "libBSQL.so"
+#define BSQL_CALL(func) call_ext(BSQL_LIB_PATH, func)
+
 //types of connections
 #define BSQL_CONNECTION_TYPE_MARIADB "MySql"
 #define BSQL_CONNECTION_TYPE_SQLSERVER "SqlServer"

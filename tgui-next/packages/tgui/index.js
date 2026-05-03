@@ -9,7 +9,7 @@ import { loadCSS } from 'fg-loadcss';
 import { render } from 'inferno';
 import { setupHotReloading } from 'tgui-dev-server/link/client';
 import { backendUpdate } from './backend';
-import { tridentVersion } from './byond';
+import { act, tridentVersion } from './byond';
 import { setupDrag } from './drag';
 import { createLogger } from './logging';
 import { getRoute } from './routes';
@@ -27,6 +27,11 @@ const renderLayout = () => {
   if (handedOverToOldTgui) {
     return;
   }
+  // Don't render until we've received actual data from the server.
+  // Middleware dispatches on startup can trigger this before data arrives.
+  if (!store.getState().config) {
+    return;
+  }
   // Mark the beginning of the render
   let startedAt;
   if (process.env.NODE_ENV !== 'production') {
@@ -42,7 +47,6 @@ const renderLayout = () => {
       const route = getRoute(state);
       // Route was not found, load old TGUI
       if (!route) {
-        logger.info('loading old tgui');
         // Short-circuit the renderer
         handedOverToOldTgui = true;
         // Unsubscribe from updates
@@ -80,6 +84,11 @@ const renderLayout = () => {
   }
   catch (err) {
     logger.error('rendering error', err);
+    const stack = (err && (err.stack || err.message)) || String(err);
+    // eslint-disable-next-line max-len
+    const errHtml = '<pre style="color:red;background:#111;padding:1em;font-size:13px;white-space:pre-wrap">TGUI RENDER ERROR:\n\n'
+      + stack + '</pre>';
+    document.body.innerHTML = errHtml;
   }
   // Report rendering time
   if (process.env.NODE_ENV !== 'production') {
@@ -117,8 +126,14 @@ const parseStateJson = json => {
     return JSON.parse(json, reviver);
   }
   catch (err) {
-    logger.log(err);
-    logger.log('What we got:', json);
+    // Try URL-decoding (BYOND may not decode url_encode output)
+    try {
+      const decoded = decodeURIComponent(String(json).replace(/\+/g, ' '));
+      return JSON.parse(decoded, reviver);
+    }
+    catch (err2) {
+      // ignore
+    }
     const msg = err && err.message;
     throw new Error('JSON parsing error: ' + msg);
   }
@@ -130,12 +145,20 @@ const setupApp = () => {
     renderLayout();
   });
 
-  // Subscribe for bankend updates
+  // Subscribe for backend updates
   window.update = window.initialize = stateJson => {
     const state = parseStateJson(stateJson);
-    // Backend update dispatches a store action
     store.dispatch(backendUpdate(state));
   };
+
+  // Tell the server the page is ready and we want our initial data.
+  // window.initialize is defined above so when the server calls output()
+  // back it is caught immediately without queuing.
+  // Also set the HTML flag so the fallback in tgui-main.html does not fire.
+  if (window.__ref__) {
+    window.__tgui_init_done = true;
+    act(window.__ref__, 'tgui:initialize');
+  }
 
   // Enable hot module reloading
   if (module.hot) {

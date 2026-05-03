@@ -11,6 +11,9 @@ import { buildQueryString } from 'common/string';
 export const tridentVersion = (() => {
   const { userAgent } = navigator;
   const groups = userAgent.match(/Trident\/(\d+).+?;/i);
+  if (!groups) {
+    return null;
+  }
   const majorVersion = groups[1];
   if (!majorVersion) {
     return null;

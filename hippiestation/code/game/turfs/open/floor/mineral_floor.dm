@@ -7,6 +7,8 @@
 	var/obj/effect/particle_effect/fakeholder
 
 /turf/open/floor/mineral/reagent/temperature_expose(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+	if(!reagent_type)
+		return ..()
 	if(exposed_temperature && !fakeholder)
 		fakeholder = new(get_turf(src))
 		fakeholder.create_reagents(50)
@@ -109,7 +111,7 @@
 	else
 		if(user && !silent)
 			to_chat(user, "<span class='notice'>You remove the floor tile.</span>")
-		if(floor_tile && make_tile)
+		if(floor_tile && make_tile && reagent_type)
 			var/obj/item/stack/tile/mineral/reagent/F = new floor_tile(src)
 			var/paths = subtypesof(/datum/reagent)
 			for(var/path in paths)

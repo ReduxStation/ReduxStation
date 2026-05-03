@@ -12,6 +12,8 @@ SUBSYSTEM_DEF(tgui)
 
 /datum/controller/subsystem/tgui/PreInit()
 	basehtml = file2text('tgui-next/packages/tgui/public/tgui-main.html')
+	if(!basehtml || !length(basehtml))
+		CRASH("TGUI: basehtml failed to load from tgui-next/packages/tgui/public/tgui-main.html")
 
 /datum/controller/subsystem/tgui/Shutdown()
 	close_all_uis()

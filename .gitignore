@@ -221,3 +221,9 @@ tts/
 !/config/title_music/sounds/exclude
 /config/title_screens/images/*
 !/config/title_screens/images/exclude
+
+# Node modules — installed fresh by Docker (yarn install) and locally by devs
+node_modules/
+
+# Environment file with real secrets (commit .env.example instead)
+.env

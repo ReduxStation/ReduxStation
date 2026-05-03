@@ -290,7 +290,8 @@ There are several things that need to be remembered:
 
 	if(client && hud_used)
 		var/obj/screen/inventory/inv = hud_used.inv_slots[TOBITSHIFT(ITEM_SLOT_SUITSTORE) + 1]
-		inv.update_icon()
+		if(inv)
+			inv.update_icon()
 
 	if(s_store)
 		s_store.screen_loc = ui_sstore1

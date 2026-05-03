@@ -44,6 +44,8 @@
 	var/list/datum/tgui/children = list()
 	var/custom_browser_id = FALSE
 	var/ui_screen = "home"
+	/// TRUE on BYOND 516+: browse() creates a direct browser control, not a window+browser pair.
+	var/is_direct_browser = FALSE
 
  /**
   * public
@@ -66,7 +68,12 @@
 	src.user = user
 	src.src_object = src_object
 	src.ui_key = ui_key
-	src.window_id = browser_id ? browser_id : "[REF(src_object)]-[ui_key]" // DO NOT replace with \ref here. src_object could potentially be tagged
+	// Build a window ID without [ ] characters — brackets in the ID cause
+	// BYOND 516 to misparse output() target strings as datum references.
+	var/raw_ref = "\ref[src_object]"
+	raw_ref = replacetext(raw_ref, ascii2text(91), "w") // 91 = [
+	raw_ref = replacetext(raw_ref, ascii2text(93), "")  // 93 = ]
+	src.window_id = browser_id ? browser_id : "[raw_ref]-[ui_key]"
 	src.custom_browser_id = browser_id ? TRUE : FALSE
 
 	set_interface(interface)
@@ -125,7 +132,10 @@
 
 	// Open the window.
 	user << browse(html, "window=[window_id];can_minimize=0;auto_format=0;[window_size][have_title_bar]")
-	if (!custom_browser_id)
+	if(user.client)
+		var/we = winexists(user.client, window_id)
+		is_direct_browser = (we == "BROWSER")
+	if (!custom_browser_id && !is_direct_browser)
 		// Instruct the client to signal UI when the window is closed.
 		// NOTE: Intentional \ref usage; tgui datums can't/shouldn't
 		// be tagged, so this is an effective unwrap
@@ -256,14 +266,21 @@
 
 	switch(action)
 		if("tgui:initialize")
-			user << output(url_encode(get_json(initial_data, initial_static_data)), "[custom_browser_id ? window_id : "[window_id].browser"]:initialize")
+			// url_encode prevents apostrophes in titles from breaking BYOND's
+			// internal JS call (BYOND wraps data in single quotes).
+			// The JS parseStateJson has a decodeURIComponent fallback.
+			var/init_json = url_encode(get_json(initial_data, initial_static_data))
+			var/output_target = is_direct_browser ? "[window_id]:update" : "[window_id].browser:update"
+			user << output(init_json, output_target)
 			initialized = TRUE
 		if("tgui:view")
 			if(params["screen"])
 				ui_screen = params["screen"]
 			SStgui.update_uis(src_object)
 		if("tgui:log")
-			// Force window to show frills on fatal errors
+			var/tgui_log_msg = "TGUI CLIENT [params["fatal"] ? "FATAL" : "LOG"] ([user] / [src_object]): [params["log"]]"
+			log_tgui(tgui_log_msg)
+			message_admins(tgui_log_msg)
 			if(params["fatal"])
 				winset(user, window_id, "titlebar=1;can-resize=1;size=600x600")
 			log_message(params["log"])
@@ -312,8 +329,8 @@
 	if(status <= UI_DISABLED && !force)
 		return // Cannot update UI, we have no visibility.
 
-	// Send the new JSON to the update() Javascript function.
-	user << output(url_encode(get_json(data, static_data)), "[custom_browser_id ? window_id : "[window_id].browser"]:update")
+	var/output_target = is_direct_browser ? "[window_id]:update" : "[window_id].browser:update"
+	user << output(url_encode(get_json(data, static_data)), output_target)
 
  /**
   * private
@@ -362,3 +379,4 @@
 
 /datum/tgui/proc/log_message(message)
 	log_tgui("[user] ([user.ckey]) using \"[title]\":\n[message]")
+

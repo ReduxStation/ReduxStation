@@ -8,8 +8,8 @@ GLOBAL_VAR_INIT(tgs_initialized, FALSE)
 //So subsystems globals exist, but are not initialised
 /world/New()
 	if(fexists(EXTOOLS))
-		call(EXTOOLS, "cleanup")()
-		call(EXTOOLS, "maptick_initialize")()
+		call_ext(EXTOOLS, "cleanup")()
+		call_ext(EXTOOLS, "maptick_initialize")()
 	enable_debugger()
 
 	//Early profile for auto-profiler - will be stopped on profiler init if necessary.

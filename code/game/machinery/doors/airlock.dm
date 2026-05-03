@@ -1174,6 +1174,11 @@
 	update_icon(AIRLOCK_CLOSED, 1)
 	operating = FALSE
 	delayed_close_requested = FALSE
+	// Safety sync: if the sprite still shows open after close(), force a recheck.
+	// Catches any race where update_icon fired while the appearance was mid-animation.
+	if(!density)
+		density = TRUE
+	update_icon()
 	if(safe)
 		CheckForMobs()
 	return TRUE

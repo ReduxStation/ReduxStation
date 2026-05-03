@@ -36,23 +36,80 @@ window.onerror = function (msg, url, line, col, error) {
       errorStack.textContent = stack;
     }
   }
-  // Send to the backend
-  location.href = 'byond://?src=' + window.__ref__
-    + '&action=tgui:log&fatal=1'
-    + '&log=' + encodeURIComponent(stack);
+  // Visible fallback: render the error directly so it shows even if the
+  // FatalError div is hidden or the bundle never booted.
+  document.body.innerHTML = '<pre style="color:red;background:#111;padding:1em;font-size:13px;white-space:pre-wrap">'
+    + 'TGUI JS ERROR:\n\n' + stack + '</pre>';
+  // Send to the backend — use Byond.Topic() if available, else location.href.
+  var _byondObj = window.Byond;
+  if (!_byondObj) { try { _byondObj = Byond; } catch(e2) {} }
+  if (_byondObj && typeof _byondObj.Topic === 'function') {
+    _byondObj.Topic({'src': window.__ref__, 'action': 'tgui:log', 'fatal': '1', 'log': stack});
+  } else {
+    window.location.href = 'byond://?src=' + encodeURIComponent(window.__ref__)
+      + '&action=tgui%3Alog&fatal=1';
+  }
   // Short-circuit further updates
   window.__updateQueue__ = [];
   window.update = window.initialize = function () {};
   // Prevent default action
   return true;
 };
-// Early initialization
+// Early initialization — queue updates until the bundle finishes loading.
 window.__updateQueue__ = [];
 window.update = window.initialize = function (stateJson) {
   window.__updateQueue__.push(stateJson);
 };
-location.href = 'byond://?src=' + window.__ref__
-  + '&action=tgui:initialize';
+// Send tgui:initialize to the server once the page is ready.
+// Strategy:
+//   1. Prefer Byond.Topic() (BYOND 516.1680+) — no page navigation.
+//      Check both window.Byond and bare Byond global (WebView2 may inject it
+//      into frame scope without attaching it to window).
+//   2. If Byond.Topic is not found after a few retries, fall back to
+//      location.href. Evidence shows BYOND 516 WebView2 intercepts byond://
+//      navigation without destroying the page (tgui:log uses the same path).
+//      We ONLY use the location.href fallback after DOMContentLoaded so the
+//      page is fully set up and window.initialize exists before BYOND responds.
+var __tgui_init_done = false;
+var __tgui_init_retries = 0;
+function __tgui_get_byond() {
+  if (window.Byond && typeof window.Byond.Topic === 'function') return window.Byond;
+  try { if (typeof Byond !== 'undefined' && typeof Byond.Topic === 'function') return Byond; }
+  catch (e) {}
+  return null;
+}
+function __tgui_send_initialize() {
+  if (__tgui_init_done) return;
+  var byondObj = __tgui_get_byond();
+  if (byondObj) {
+    __tgui_init_done = true;
+    byondObj.Topic({'src': window.__ref__, 'action': 'tgui:initialize'});
+    return;
+  }
+  if (++__tgui_init_retries < 10) {
+    // Keep polling — Byond object may appear shortly after page events fire
+    setTimeout(__tgui_send_initialize, 50);
+    return;
+  }
+  // Byond.Topic unavailable after ~500ms of polling. Fall back to location.href.
+  // Use the same URL format as byond.js callByond(): encodeURIComponent + & separator.
+  __tgui_init_done = true;
+  window.location.href = 'byond://?src=' + encodeURIComponent(window.__ref__)
+    + '&action=tgui%3Ainitialize';
+}
+window.addEventListener('byond-ready', function() {
+  setTimeout(__tgui_send_initialize, 0);
+});
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(__tgui_send_initialize, 0);
+});
+window.addEventListener('load', function() {
+  // Reset retries so the load event gets its own 10 attempts before fallback
+  if (!__tgui_init_done) {
+    __tgui_init_retries = 0;
+    setTimeout(__tgui_send_initialize, 0);
+  }
+});
 </script>
 
 <!-- Styles -->
@@ -70,7 +127,7 @@ location.href = 'byond://?src=' + window.__ref__
 <script type="text/javascript" defer src="tgui.bundle.js"></script>
 
 </head>
-<body>
+<body style="background:#1b1b1b;color:#fff;">
 
 <!-- tgui container -->
 <div id="react-root"></div>

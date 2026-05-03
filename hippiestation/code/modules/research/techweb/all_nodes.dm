@@ -10,14 +10,6 @@
 /datum/techweb_node/nanite_harmonic
 	design_ids = list("fakedeath_nanites","aggressive_nanites","defib_nanites","regenerative_plus_nanites","brainheal_plus_nanites","purging_plus_nanites")
 
-/datum/techweb_node/adv_datatheory
-	id = "adv_datatheory"
-	display_name = "Advanced Data Theory"
-	description = "Better insight into programming and data."
-	prereq_ids = list("datatheory")
-	design_ids = list("icprinter", "icupgadv", "icupgclo")
-	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = 2500)
-	export_price = 5000
 
 /datum/techweb_node/ancient_weaponry
 	id = "ancient_weapons"
@@ -91,7 +83,7 @@
 	id = "autodoc"
 	display_name = "Complex Anatomical Automation"
 	description = "Advanced automation and complex anatomical knowhow combined to make advanced surgical things!"
-	prereq_ids = list("exp_surgery", "bio_process", "adv_datatheory", "adv_engi", "high_efficiency")
+	prereq_ids = list("exp_surgery", "bio_process", "adv_engi", "high_efficiency")
 	design_ids = list("autodoc")
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = 15000)
 	export_price = 10000

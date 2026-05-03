@@ -334,3 +334,20 @@ window "statwindow"
 		tab-background-color = #272727
 		prefix-color = #ebebeb
 		suffix-color = #ebebeb
+
+window "admin2"
+	elem "admin2"
+		type = MAIN
+		pos = 100,100
+		size = 240x280
+		anchor1 = none
+		anchor2 = none
+		saved-params = "pos;size"
+	elem "browser"
+		type = BROWSER
+		pos = 0,0
+		size = 240x280
+		anchor1 = 0,0
+		anchor2 = 100,100
+		is-default = true
+		saved-params = ""
