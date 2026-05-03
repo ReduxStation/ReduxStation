@@ -27,14 +27,6 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Setup Node 12
-        run: |
-          source ~/.nvm/nvm.sh
-          nvm install 12
-          nvm use 12
-          npm install -g yarn webpack-cli@3
-          node --version
-
       - name: Install Python packages
         run: pip3 install PyYaml beautifulsoup4 'ruamel.yaml>=0.15'
 
@@ -67,7 +59,7 @@ jobs:
         run: find . -name "*.json" -not -path "*/node_modules/*" -print0 | xargs -0 python3 ./tools/json_verifier.py
 
       - name: Build TGUI
-        run: tools/travis/build_tgui.sh
+        run: docker build --target tgui_builder .
 
       - name: Check grep patterns
         run: tools/travis/check_grep.sh

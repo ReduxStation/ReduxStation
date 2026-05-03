@@ -93264,7 +93264,7 @@
 /turf/open/floor/plating,
 /area/science/research/abandoned)
 "dqa" = (
-/obj/structure/cable/white{
+/obj/structure/cable{
 	icon_state = "2-4"
 	},
 /obj/effect/turf_decal/delivery,
