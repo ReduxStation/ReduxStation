@@ -136,7 +136,7 @@
 
 
 #define COMPILE_OVERLAYS(A)\
-	if (TRUE) {\
+	if(A) {\
 		var/list/ad = A.add_overlays;\
 		var/list/rm = A.remove_overlays;\
 		var/list/po = A.priority_overlays;\
