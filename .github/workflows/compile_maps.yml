@@ -1,0 +1,60 @@
+name: Compile Maps
+
+on:
+  push:
+    branches-ignore:
+      - '___TGS3TempBranch'
+      - '___TGSTempBranch'
+      - '___TGSUpdateBranch'
+  pull_request:
+    branches-ignore:
+      - '___TGS3TempBranch'
+      - '___TGSTempBranch'
+      - '___TGSUpdateBranch'
+
+jobs:
+  compile-maps:
+    name: Compile All Maps
+    runs-on: ubuntu-latest
+    container:
+      image: debian:12-slim
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Install system packages
+        run: |
+          dpkg --add-architecture i386
+          apt-get update -qq
+          apt-get install -y --no-install-recommends \
+            ca-certificates curl unzip make git python3 \
+            libc6:i386 libstdc++6:i386 libgcc-s1:i386 libssl3:i386 libcurl4:i386
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Cache BYOND
+        id: cache-byond
+        uses: actions/cache@v4
+        with:
+          path: ~/BYOND
+          key: debian12-byond-v2-${{ hashFiles('dependencies.sh') }}
+
+      - name: Install BYOND
+        if: steps.cache-byond.outputs.cache-hit != 'true'
+        run: tools/travis/install_byond.sh
+
+      - name: Configure BYOND environment
+        run: |
+          source ~/BYOND/byond/bin/byondsetup
+          echo "PATH=$PATH" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+      - name: Generate template DM includes
+        run: python3 tools/travis/template_dm_generator.py
+
+      - name: Compile all maps
+        run: bash tools/travis/dm.sh -DTRAVISBUILDING -DTRAVISTESTING -DALL_MAPS hippiestation.dme

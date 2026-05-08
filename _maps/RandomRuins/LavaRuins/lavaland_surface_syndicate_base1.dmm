@@ -127,6 +127,11 @@
 /obj/machinery/chem_dispenser/fullupgrade,
 /turf/open/floor/plasteel,
 /area/ruin/unpowered/syndicate_lava_base/chemistry)
+"aQ" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/machinery/light/small,
+/turf/open/floor/plasteel,
+/area/ruin/unpowered/syndicate_lava_base/arrivals)
 "aW" = (
 /obj/effect/turf_decal/tile/red,
 /obj/effect/turf_decal/tile/red{
@@ -5264,9 +5269,6 @@
 /turf/open/floor/plasteel,
 /area/ruin/unpowered/syndicate_lava_base/arrivals)
 "nv" = (
-/obj/structure/cable/yellow{
-	icon_state = "4-8"
-	},
 /obj/effect/turf_decal/tile/red{
 	dir = 1
 	},
@@ -5276,6 +5278,7 @@
 /obj/machinery/atmospherics/pipe/simple/scrubbers/hidden/layer3{
 	dir = 4
 	},
+/obj/structure/cable,
 /turf/open/floor/plasteel,
 /area/ruin/unpowered/syndicate_lava_base/arrivals)
 "nw" = (
@@ -6009,15 +6012,6 @@
 /obj/machinery/atmospherics/pipe/simple/scrubbers/hidden/layer3,
 /turf/open/floor/engine,
 /area/ruin/unpowered/syndicate_lava_base/testlab)
-"Pa" = (
-/obj/effect/turf_decal/tile/red,
-/obj/effect/turf_decal/tile/red{
-	dir = 8
-	},
-/turf/open/floor/plasteel/white/corner{
-	dir = 4
-	},
-/area/ruin/unpowered/syndicate_lava_base/arrivals)
 "RE" = (
 /obj/machinery/atmospherics/pipe/simple/supply/hidden{
 	dir = 9
@@ -7297,8 +7291,8 @@ my
 jy
 nt
 nW
-oo
-ox
+aW
+mT
 ab
 ab
 ab
@@ -7348,7 +7342,7 @@ jy
 nu
 nX
 oo
-ox
+mT
 ab
 ab
 ab
@@ -7396,8 +7390,8 @@ jy
 jy
 mX
 nv
-nX
-aW
+aQ
+mT
 mT
 ab
 ab
@@ -7447,8 +7441,8 @@ mz
 mY
 nw
 nZ
-Pa
 mT
+ab
 ab
 ab
 ab

@@ -43,7 +43,7 @@
 
 /datum/reagent/water/reaction_turf(turf/open/T, reac_volume)
 	. = ..()
-	for(var/mob/living/simple_animal/hostile/gremlin/G in src)
+	for(var/mob/living/simple_animal/hostile/gremlin/G in T)
 		G.divide()
 
 /datum/reagent/water/on_mob_life(mob/living/M)

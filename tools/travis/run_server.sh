@@ -8,7 +8,7 @@ mkdir travis_test/config
 cp tools/travis/travis_config.txt travis_test/config/config.txt
 
 cd travis_test
-ln -s $HOME/libmariadb/libmariadb.so libmariadb.so
+ln -s /usr/lib/i386-linux-gnu/libmariadb.so.3 libmariadb.so
 DreamDaemon hippiestation.dmb -close -trusted -verbose -params "test-run&log-directory=travis"
 cd ..
 cat travis_test/data/logs/travis/clean_run.lk

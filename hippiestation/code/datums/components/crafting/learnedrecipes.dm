@@ -514,13 +514,3 @@
 				)
 	tools = list(TOOL_SCREWDRIVER, TOOL_MULTITOOL)
 	time = 25
-
-/datum/crafting_recipe/learned/repeaterang
-	name = "repeaterang"
-	result = /obj/item/boomerang/repeat
-	reqs = list(/obj/item/stack/sheet/mineral/titanium = 3,
-				/datum/reagent/liquid_dark_matter = 15,
-				/obj/item/paper = 3
-				)
-	tools = list(TOOL_SCREWDRIVER, TOOL_WELDER)
-	time = 60
