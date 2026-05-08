@@ -21,7 +21,3 @@
 /obj/effect/landmark/start/vice_officer
 	name = "Vice Officer"
 	icon_state = "x4"
-
-/obj/effect/landmark/start/discjockey
-	name = "DJ"
-	icon_state = "x2"
