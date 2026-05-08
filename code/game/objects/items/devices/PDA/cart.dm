@@ -13,7 +13,6 @@
 #define CART_QUARTERMASTER		(1<<12)
 #define CART_HYDROPONICS		(1<<13)
 #define CART_DRONEPHONE			(1<<14)
-#define CART_DISCO				(1<<15)
 
 
 /obj/item/cartridge
@@ -55,12 +54,6 @@
 	var/obj/item/pda/pda = loc
 	if(istype(pda))
 		host_pda = pda
-
-/obj/item/cartridge/discjockey
-	name = "\improper DISCO FEVER Inc. cartridge"
-	desc = "An on-the-go flashlight-modification cartridge for anyone who wants a DANCE PARTY."
-	icon_state = "cart-dj"
-	access = CART_DISCO
 
 /obj/item/cartridge/engineering
 	name = "\improper Power-ON cartridge"
