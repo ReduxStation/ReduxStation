@@ -30,7 +30,7 @@
 	if (target.anti_magic_check())
 		return
 	if(target.health <= 0)
-		if(!target.stat & DEAD)
+		if(!(target.stat & DEAD))
 			target.adjustOxyLoss(500)
 			to_chat(user, "<span class='notice'>You've successfully killed [target], refunding your spell and decreasing it's cooldown permanently.</span>")
 			user.playsound_local(user, 'hippiestation/sound/effects/Necrolord_Soulflare_Crit.ogg')

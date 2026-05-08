@@ -209,8 +209,7 @@
 	crafting_recipe_types = list(
 		/datum/crafting_recipe/learned/ballisticcrossbow,
 		/datum/crafting_recipe/learned/hookspear,
-		/datum/crafting_recipe/learned/edagger,
-		/datum/crafting_recipe/learned/repeaterang
+		/datum/crafting_recipe/learned/edagger
 		)
 	icon_state = "illegalweapons"
 	remarks = list("Adnan Khashoggi eh? What a mouthful.","So he makes weapons from thousands of years ago and weapons with modern day technology?","I wish I could go to Victoria College and get off this dump of a station.","...weapons deals with Nanotrasen at one point?","This guy knows how to grow a good stache!","I wonder what it's like being in the one percent...","There was a plot by the Space Wizard Federation to assassinate him? Typical.")

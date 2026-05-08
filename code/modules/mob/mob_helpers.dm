@@ -91,13 +91,13 @@
 				newletter = "...huuuhhh..."
 			else if(newletter == ".")
 				newletter = " *BURP*."
-		switch(rand(1, 20))
-			if(1)
-				newletter += "'"
-			if(10)
-				newletter += "[newletter]"
-			if(20)
-				newletter += "[newletter][newletter]"
+		var/roll20 = rand(1, 20)
+		if(roll20 == 1)
+			newletter += "'"
+		else if(roll20 == 10)
+			newletter += "[newletter]"
+		else if(roll20 == 20)
+			newletter += "[newletter][newletter]"
 		. += "[newletter]"
 	return sanitize(.)
 
@@ -130,17 +130,17 @@
 			else if(newletter == "H")
 				newletter = " IT COMES... "
 
-		switch(rand(1, 15))
-			if(1)
-				newletter = "'"
-			if(2)
-				newletter += "agn"
-			if(3)
-				newletter = "fth"
-			if(4)
-				newletter = "nglu"
-			if(5)
-				newletter = "glor"
+		var/roll15 = rand(1, 15)
+		if(roll15 == 1)
+			newletter = "'"
+		else if(roll15 == 2)
+			newletter += "agn"
+		else if(roll15 == 3)
+			newletter = "fth"
+		else if(roll15 == 4)
+			newletter = "nglu"
+		else if(roll15 == 5)
+			newletter = "glor"
 		. += newletter
 	return sanitize(.)
 
