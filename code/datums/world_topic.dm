@@ -125,7 +125,8 @@
 	var/datum/tgs_chat_user/user = new
 	user.friendly_name = input["sender"]
 	user.mention = user.friendly_name
-	return NC.Run(user, input["namecheck"])
+	var/datum/tgs_message_content/result = NC.Run(user, input["namecheck"])
+	return result?.text
 
 /datum/world_topic/adminwho
 	keyword = "adminwho"

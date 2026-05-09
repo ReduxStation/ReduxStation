@@ -7,11 +7,11 @@
 	for(var/member in SSdiscord.notify_members) // If they are in the list, take them out
 		if(member == "[sender.mention]")
 			SSdiscord.notify_members -= "[SSdiscord.id_clean(sender.mention)]" // The list uses strings because BYOND cannot handle a 17 digit integer
-			return "You will no longer be notified when the server restarts"
-		
+			return new /datum/tgs_message_content("You will no longer be notified when the server restarts")
+
 	// If we got here, they arent in the list. Chuck 'em in!
 	SSdiscord.notify_members += "[SSdiscord.id_clean(sender.mention)]" // The list uses strings because BYOND cannot handle a 17 digit integer
-	return "You will now be notified when the server restarts"
+	return new /datum/tgs_message_content("You will now be notified when the server restarts")
 
 // Verify
 /datum/tgs_chat_command/verify
@@ -23,8 +23,8 @@
 	if(SSdiscord.account_link_cache[lowerparams]) // First if they are in the list, then if the ckey matches
 		if(SSdiscord.account_link_cache[lowerparams] == "[SSdiscord.id_clean(sender.mention)]") // If the associated ID is the correct one
 			SSdiscord.link_account(lowerparams)
-			return "Successfully linked accounts"
+			return new /datum/tgs_message_content("Successfully linked accounts")
 		else
-			return "That ckey is not associated to this discord account. If someone has used your ID, please inform an administrator"
+			return new /datum/tgs_message_content("That ckey is not associated to this discord account. If someone has used your ID, please inform an administrator")
 	else
-		return "Account not setup for linkage"
+		return new /datum/tgs_message_content("Account not setup for linkage")

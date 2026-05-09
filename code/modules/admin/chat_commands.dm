@@ -15,7 +15,7 @@
 	var/list/allmins = adm["total"]
 	var/status = "Admins: [allmins.len] (Active: [english_list(adm["present"])] AFK: [english_list(adm["afk"])] Stealth: [english_list(adm["stealth"])] Skipped: [english_list(adm["noflags"])]). "
 	status += "Players: [GLOB.clients.len] (Active: [get_active_player_count(0,1,0)]). Mode: [SSticker.mode ? SSticker.mode.name : "Not started"]."
-	return status
+	return new /datum/tgs_message_content(status)
 
 /datum/tgs_chat_command/irccheck
 	name = "check"
@@ -28,7 +28,7 @@
 		return
 	last_irc_check = rtod
 	var/server = CONFIG_GET(string/server)
-	return "[GLOB.round_id ? "Round #[GLOB.round_id]: " : ""][GLOB.clients.len] players on [SSmapping.config.map_name], Mode: [GLOB.master_mode]; Round [SSticker.HasRoundStarted() ? (SSticker.IsRoundInProgress() ? "Active" : "Finishing") : "Starting"] -- [server ? server : "[world.internet_address]:[world.port]"]" 
+	return new /datum/tgs_message_content("[GLOB.round_id ? "Round #[GLOB.round_id]: " : ""][GLOB.clients.len] players on [SSmapping.config.map_name], Mode: [GLOB.master_mode]; Round [SSticker.HasRoundStarted() ? (SSticker.IsRoundInProgress() ? "Active" : "Finishing") : "Starting"] -- [server ? server : "[world.internet_address]:[world.port]"]")
 
 /datum/tgs_chat_command/ahelp
 	name = "ahelp"
@@ -38,7 +38,7 @@
 /datum/tgs_chat_command/ahelp/Run(datum/tgs_chat_user/sender, params)
 	var/list/all_params = splittext(params, " ")
 	if(all_params.len < 2)
-		return "Insufficient parameters"
+		return new /datum/tgs_message_content("Insufficient parameters")
 	var/target = all_params[1]
 	all_params.Cut(1, 2)
 	var/id = text2num(target)
@@ -47,10 +47,10 @@
 		if(AH)
 			target = AH.initiator_ckey
 		else
-			return "Ticket #[id] not found!"
+			return new /datum/tgs_message_content("Ticket #[id] not found!")
 	var/res = IrcPm(target, all_params.Join(" "), sender.friendly_name)
 	if(res != "Message Successful")
-		return res
+		return new /datum/tgs_message_content(res)
 
 /datum/tgs_chat_command/namecheck
 	name = "namecheck"
@@ -60,10 +60,10 @@
 /datum/tgs_chat_command/namecheck/Run(datum/tgs_chat_user/sender, params)
 	params = trim(params)
 	if(!params)
-		return "Insufficient parameters"
+		return new /datum/tgs_message_content("Insufficient parameters")
 	log_admin("Chat Name Check: [sender.friendly_name] on [params]")
 	message_admins("Name checking [params] from [sender.friendly_name]")
-	return keywords_lookup(params, 1)
+	return new /datum/tgs_message_content(keywords_lookup(params, 1))
 
 /datum/tgs_chat_command/adminwho
 	name = "adminwho"
@@ -71,7 +71,7 @@
 	admin_only = TRUE
 
 /datum/tgs_chat_command/adminwho/Run(datum/tgs_chat_user/sender, params)
-	return ircadminwho()
+	return new /datum/tgs_message_content(ircadminwho())
 
 GLOBAL_LIST(round_end_notifiees)
 
@@ -82,10 +82,10 @@ GLOBAL_LIST(round_end_notifiees)
 
 /datum/tgs_chat_command/endnotify/Run(datum/tgs_chat_user/sender, params)
 	if(!SSticker.IsRoundInProgress() && SSticker.HasRoundStarted())
-		return "[sender.mention], the round has already ended!"
+		return new /datum/tgs_message_content("[sender.mention], the round has already ended!")
 	LAZYINITLIST(GLOB.round_end_notifiees)
 	GLOB.round_end_notifiees[sender.mention] = TRUE
-	return "I will notify [sender.mention] when the round ends."
+	return new /datum/tgs_message_content("I will notify [sender.mention] when the round ends.")
 
 /datum/tgs_chat_command/sdql
 	name = "sdql"
@@ -94,15 +94,15 @@ GLOBAL_LIST(round_end_notifiees)
 
 /datum/tgs_chat_command/sdql/Run(datum/tgs_chat_user/sender, params)
 	if(GLOB.AdminProcCaller)
-		return "Unable to run query, another admin proc call is in progress. Try again later."
+		return new /datum/tgs_message_content("Unable to run query, another admin proc call is in progress. Try again later.")
 	GLOB.AdminProcCaller = "CHAT_[sender.friendly_name]"	//_ won't show up in ckeys so it'll never match with a real admin
 	var/list/results = world.SDQL2_query(params, GLOB.AdminProcCaller, GLOB.AdminProcCaller)
 	GLOB.AdminProcCaller = null
 	if(!results)
-		return "Query produced no output"
+		return new /datum/tgs_message_content("Query produced no output")
 	var/list/text_res = results.Copy(1, 3)
 	var/list/refs = results.len > 3 ? results.Copy(4) : null
-	. = "[text_res.Join("\n")][refs ? "\nRefs: [refs.Join(" ")]" : ""]"
+	return new /datum/tgs_message_content("[text_res.Join("\n")][refs ? "\nRefs: [refs.Join(" ")]" : ""]")
 	
 /datum/tgs_chat_command/reload_admins
 	name = "reload_admins"
@@ -112,7 +112,7 @@ GLOBAL_LIST(round_end_notifiees)
 /datum/tgs_chat_command/reload_admins/Run(datum/tgs_chat_user/sender, params)
 	ReloadAsync()
 	log_admin("[sender.friendly_name] reloaded admins via chat command.")
-	return "Admins reloaded."
+	return new /datum/tgs_message_content("Admins reloaded.")
 
 /datum/tgs_chat_command/reload_admins/proc/ReloadAsync()
 	set waitfor = FALSE
