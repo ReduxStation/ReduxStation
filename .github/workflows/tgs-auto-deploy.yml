@@ -1,0 +1,92 @@
+name: TGS auto-deploy
+
+# When master moves (a PR was merged), tell the live tgstation-server to pull
+# the new HEAD and start a deployment job. Caddy hot-swaps the watchdog when
+# the compile succeeds; the running round is unaffected, the next round runs
+# the new code.
+#
+# This is the webhook side of the deploy story. PRs that have NOT been merged
+# stay testable via TGS's "Test Merge" feature on the panel.
+#
+# Required repository secrets:
+#   TGS_URL           -- public HTTPS base, e.g. https://panel.owo.fm
+#   TGS_USERNAME      -- TGS user with InstanceManager + DreamMaker rights
+#   TGS_PASSWORD      -- password for that user
+#   TGS_INSTANCE_ID   -- numeric instance id (visible in the panel URL)
+#
+# The user that owns the credentials must have at minimum:
+#   - RepositoryRights.UpdateBranch (to run "update from origin")
+#   - DreamMakerRights.Compile      (the auto-deploy that follows the update
+#                                    inherits the user that triggered it)
+#
+# If the API call fails (TGS down, creds rotated, network issue) the workflow
+# fails loudly so we notice. The deploy itself is async on the TGS side; we
+# do not block on the compile finishing.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tgs-auto-deploy
+  cancel-in-progress: false
+
+jobs:
+  trigger-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger TGS repository update + deploy
+        env:
+          TGS_URL: ${{ secrets.TGS_URL }}
+          TGS_USERNAME: ${{ secrets.TGS_USERNAME }}
+          TGS_PASSWORD: ${{ secrets.TGS_PASSWORD }}
+          TGS_INSTANCE_ID: ${{ secrets.TGS_INSTANCE_ID }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${TGS_URL:-}" ] || [ -z "${TGS_USERNAME:-}" ] \
+             || [ -z "${TGS_PASSWORD:-}" ] || [ -z "${TGS_INSTANCE_ID:-}" ]; then
+            echo "::error::One or more required secrets are unset (TGS_URL, TGS_USERNAME, TGS_PASSWORD, TGS_INSTANCE_ID)."
+            exit 1
+          fi
+
+          # TGS requires an Api header naming the client API version. Pick a
+          # 10.x line; the server negotiates compat. Bump if TGS rejects it.
+          API_HEADER="Tgstation.Server.Api/10.10.0"
+          UA_HEADER="ResurgenceStation-AutoDeploy/1.0"
+
+          # Step 1: log in. POST to / with Basic auth returns a Bearer token
+          # in the response body's `bearer` field.
+          BASIC=$(printf '%s:%s' "$TGS_USERNAME" "$TGS_PASSWORD" | base64 -w0)
+          LOGIN_RESP=$(curl -fsS -X POST "$TGS_URL/" \
+            -H "Accept: application/json" \
+            -H "Api: $API_HEADER" \
+            -H "User-Agent: $UA_HEADER" \
+            -H "Authorization: Basic $BASIC")
+
+          TOKEN=$(printf '%s' "$LOGIN_RESP" | jq -r '.bearer')
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "::error::TGS login did not return a bearer token."
+            echo "$LOGIN_RESP" | jq '.' || true
+            exit 1
+          fi
+
+          # Step 2: tell the instance to pull the new master. If the instance
+          # has auto-deploy enabled (RepositoryUpdateAutomaticallyDeploys), TGS
+          # queues a DreamMaker compile + watchdog hot-swap automatically.
+          UPDATE_RESP=$(curl -fsS -X POST "$TGS_URL/Repository" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -H "Api: $API_HEADER" \
+            -H "User-Agent: $UA_HEADER" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Instance: $TGS_INSTANCE_ID" \
+            -d '{"updateFromOrigin": true, "reference": "master"}')
+
+          JOB_ID=$(printf '%s' "$UPDATE_RESP" | jq -r '.activeJob.id // empty')
+          echo "TGS accepted the update request. Job id: ${JOB_ID:-<none returned>}"
+          printf '%s' "$UPDATE_RESP" | jq '.' || true
