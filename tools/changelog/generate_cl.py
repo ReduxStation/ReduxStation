@@ -25,7 +25,7 @@ import os
 import io
 import re
 from pathlib import Path
-from ruamel import yaml
+from ruamel.yaml import YAML
 from github import Github, InputGitAuthor
 
 CL_BODY = re.compile(r":cl:(.+)?\r?\n((.|\n|\r)+?)\r?\n\/:cl:", re.MULTILINE)
@@ -71,7 +71,7 @@ else:
 write_cl['delete-after'] = True
 
 with open(Path.cwd().joinpath("tools/changelog/tags.yml")) as file:
-    tags = yaml.safe_load(file)
+    tags = YAML(typ='safe', pure=True).load(file)
 
 write_cl['changes'] = []
 
@@ -83,9 +83,9 @@ for k, v in cl_list:
 
 if write_cl['changes']:
     with io.StringIO() as cl_contents:
-        yaml = yaml.YAML()
-        yaml.indent(sequence=4, offset=2)
-        yaml.dump(write_cl, cl_contents)
+        yaml_writer = YAML()
+        yaml_writer.indent(sequence=4, offset=2)
+        yaml_writer.dump(write_cl, cl_contents)
         cl_contents.seek(0)
 
         #Push the newly generated changelog to the master branch so that it can be compiled
