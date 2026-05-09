@@ -148,7 +148,7 @@ jobs:
               -H "User-Agent: $UA_HEADER" \
               -H "Authorization: Bearer $TOKEN" \
               -H "Instance: $TGS_INSTANCE_ID" \
-              -d '{"updateFromOrigin": true, "reference": "master"}'); then
+              -d '{"updateFromOrigin": true}'); then
             echo "::error::Repository update failed. If HTTP 403 above, the deploy user is missing Repository -> Update Branch on instance $TGS_INSTANCE_ID. If HTTP 409, another job is already in flight."
             exit 1
           fi
