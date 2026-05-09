@@ -78,16 +78,19 @@ jobs:
             body_file=$(mktemp)
             local code
             shift 3
-            code=$(curl -sS -o "$body_file" -w "%{http_code}" -X "$method" "$url" "$@") || true
-            echo "----- $label -----"
-            echo "$method $url -> HTTP $code"
-            echo "Response body:"
-            if jq -e . <"$body_file" >/dev/null 2>&1; then
-              jq '.' <"$body_file"
-            else
-              cat "$body_file"
-            fi
-            echo "-------------------"
+            code=$(curl -sS -o "$body_file" -w "%{http_code}" -X "$method" "$url" "$@" 2>&1) || true
+            # Diagnostics to stderr so $(tgs_call ...) only captures the body.
+            {
+              echo "----- $label -----"
+              echo "$method $url -> HTTP $code"
+              echo "Response body:"
+              if jq -e . <"$body_file" >/dev/null 2>&1; then
+                jq '.' <"$body_file"
+              else
+                cat "$body_file"
+              fi
+              echo "-------------------"
+            } >&2
             if [ "${code:0:1}" != "2" ]; then
               rm -f "$body_file"
               return 1
