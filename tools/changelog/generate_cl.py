@@ -28,7 +28,7 @@ from pathlib import Path
 from ruamel.yaml import YAML
 from github import Github, InputGitAuthor
 
-CL_BODY = re.compile(r":cl:(.+)?\r?\n((.|\n|\r)+?)\r?\n\/:cl:", re.MULTILINE)
+CL_BODY = re.compile(r":cl:(.+)?\r?\n((.|\n|\r)*?)\r?\n\/:cl:", re.MULTILINE)
 CL_SPLIT = re.compile(r"(^\w+):\s+(\w.+)", re.MULTILINE)
 
 git_email = os.getenv("GIT_EMAIL")
@@ -46,7 +46,7 @@ pr_list = commit.get_pulls()
 
 if not pr_list.totalCount:
     print("Direct commit detected")
-    exit(1) # Change to '0' if you do not want the action to fail when a direct commit is detected
+    exit(0) # Direct pushes to master (e.g. by GitHub Actions itself) have no PR; not an error.
 
 pr = pr_list[0]
 
@@ -55,12 +55,13 @@ pr_number = pr.number
 pr_author = pr.user.login
 
 write_cl = {}
-try:
-    cl = CL_BODY.search(pr_body)
-    cl_list = CL_SPLIT.findall(cl.group(2))
-except AttributeError:
+if pr_body is None:
+    pr_body = ""
+cl = CL_BODY.search(pr_body)
+if cl is None:
     print("No CL found!")
-    exit(1) # Change to '0' if you do not want the action to fail when no CL is provided
+    exit(0) # PRs without a :cl: block (or with the minimal :cl:\n/:cl: form) are a clean no-op, not a CI failure.
+cl_list = CL_SPLIT.findall(cl.group(2) or "")
 
 
 if cl.group(1) is not None:
