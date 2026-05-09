@@ -62,3 +62,26 @@ scatter "$GAME_DIR/libquickwrite.so" quickwrite
 # Refresh the ldconfig cache so dlopen-by-soname (librust_g.so etc.) finds
 # the freshly scattered files in /usr/local/lib and /usr/lib/i386-linux-gnu.
 ldconfig
+
+# ── Self-install sibling event scripts ───────────────────────────────────────
+# Every TGS deploy hot-swaps a fresh copy of the source tree into the game
+# directory. Use that to keep Configuration/EventScripts/ in lockstep with
+# tools/tgs4_scripts/ in the repo: copy each sibling script (PreStartup,
+# RoundStart, RoundEnd, plus PostCompile itself for the *next* deploy) into
+# the instance's EventScripts dir. Drop the .sh extension because TGS runs
+# files by basename match.
+#
+# Without this, every change to one of the sibling scripts requires a manual
+# `docker cp` into the instance volume. With it, an update merged to master
+# takes effect on the next deploy automatically (with a one-deploy lag for
+# PostCompile itself, since the running PostCompile installs the new one).
+EVENT_DST="$(dirname "$(dirname "$GAME_DIR")")/Configuration/EventScripts"
+if [ -d "$EVENT_DST" ]; then
+    for SCRIPT in PostCompile PreStartup RoundStart RoundEnd; do
+        SRC="$GAME_DIR/tools/tgs4_scripts/$SCRIPT.sh"
+        if [ -f "$SRC" ]; then
+            cp -f "$SRC" "$EVENT_DST/$SCRIPT"
+            chmod +x "$EVENT_DST/$SCRIPT"
+        fi
+    done
+fi
