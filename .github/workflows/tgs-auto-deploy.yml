@@ -137,11 +137,13 @@ jobs:
             -H "Authorization: Bearer $TOKEN" \
             -H "Instance: $TGS_INSTANCE_ID" >/dev/null || true
 
-          # Step 2: tell the instance to pull the new master. PATCH /api/Repository
+          # Step 2: tell the instance to pull the new master. POST /api/Repository
           # with updateFromOrigin: true is the API equivalent of clicking
           # "Reset repository to remote tracked reference" on the panel.
+          # (PATCH is the Reclone endpoint - completely different operation
+          # with its own RepositoryRights.Reclone permission. Don't mix them up.)
           # 403 here = user lacks Repository.UpdateBranch on the instance.
-          if ! UPDATE_RESP=$(tgs_call "REPOSITORY UPDATE" PATCH "$BASE/api/Repository" \
+          if ! UPDATE_RESP=$(tgs_call "REPOSITORY UPDATE" POST "$BASE/api/Repository" \
               -H "Accept: application/json" \
               -H "Content-Type: application/json" \
               -H "Api: $API_HEADER" \
