@@ -240,12 +240,3 @@ caddy-sites.d/
 
 # Per-worktree scratch / status / journal files. Never tracked.
 .claude/
-
-# Site-local docroots referenced from docker-compose.override.yml. Add the
-# specific names you've used in your override here. The default template
-# uses ./WWW for the pokelab block.
-WWW/
-
-# Real Dockerfile for the optional pokelab service (commit
-# docker/pokelab/Dockerfile.example instead).
-docker/pokelab/Dockerfile
