@@ -66,52 +66,89 @@ jobs:
           # Strip any trailing slash on TGS_URL so we can append paths cleanly.
           BASE="${TGS_URL%/}"
 
+          # Helper: run curl, capture body+code, fail the step with a clearly
+          # labelled error showing the HTTP status and response body so the
+          # log identifies which call failed and why (instead of just
+          # `curl: (22) error: NNN`).
+          tgs_call() {
+            local label="$1"
+            local method="$2"
+            local url="$3"
+            local body_file
+            body_file=$(mktemp)
+            local code
+            shift 3
+            code=$(curl -sS -o "$body_file" -w "%{http_code}" -X "$method" "$url" "$@") || true
+            echo "----- $label -----"
+            echo "$method $url -> HTTP $code"
+            echo "Response body:"
+            if jq -e . <"$body_file" >/dev/null 2>&1; then
+              jq '.' <"$body_file"
+            else
+              cat "$body_file"
+            fi
+            echo "-------------------"
+            if [ "${code:0:1}" != "2" ]; then
+              rm -f "$body_file"
+              return 1
+            fi
+            cat "$body_file"
+            rm -f "$body_file"
+          }
+
           # Step 1: log in. POST /api/ with Basic auth returns a Bearer token
           # in the response body's `bearer` field.
           BASIC=$(printf '%s:%s' "$TGS_USERNAME" "$TGS_PASSWORD" | base64 -w0)
-          LOGIN_RESP=$(curl -fsS -X POST "$BASE/api/" \
-            -H "Accept: application/json" \
-            -H "Api: $API_HEADER" \
-            -H "User-Agent: $UA_HEADER" \
-            -H "Authorization: Basic $BASIC")
-
-          TOKEN=$(printf '%s' "$LOGIN_RESP" | jq -r '.bearer')
-          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-            echo "::error::TGS login did not return a bearer token."
-            echo "$LOGIN_RESP" | jq '.' || true
+          if ! LOGIN_RESP=$(tgs_call "LOGIN" POST "$BASE/api/" \
+              -H "Accept: application/json" \
+              -H "Api: $API_HEADER" \
+              -H "User-Agent: $UA_HEADER" \
+              -H "Authorization: Basic $BASIC"); then
+            echo "::error::Login failed. Check TGS_USERNAME / TGS_PASSWORD and that the user is enabled."
             exit 1
           fi
 
-          # Step 2: tell the instance to pull the new master. PATCH /api/Repository
-          # with updateFromOrigin: true is the API equivalent of clicking "Reset
-          # repository to remote tracked reference" on the panel.
-          UPDATE_RESP=$(curl -fsS -X PATCH "$BASE/api/Repository" \
-            -H "Accept: application/json" \
-            -H "Content-Type: application/json" \
-            -H "Api: $API_HEADER" \
-            -H "User-Agent: $UA_HEADER" \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Instance: $TGS_INSTANCE_ID" \
-            -d '{"updateFromOrigin": true, "reference": "master"}')
+          TOKEN=$(printf '%s' "$LOGIN_RESP" | jq -r '.bearer // empty')
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Login response did not include a bearer token."
+            exit 1
+          fi
+          echo "Login OK. Token length: ${#TOKEN}"
 
+          # Step 2: tell the instance to pull the new master. PATCH /api/Repository
+          # with updateFromOrigin: true is the API equivalent of clicking
+          # "Reset repository to remote tracked reference" on the panel.
+          # 403 here = user lacks Repository.UpdateBranch on the instance.
+          if ! UPDATE_RESP=$(tgs_call "REPOSITORY UPDATE" PATCH "$BASE/api/Repository" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              -H "Api: $API_HEADER" \
+              -H "User-Agent: $UA_HEADER" \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "Instance: $TGS_INSTANCE_ID" \
+              -d '{"updateFromOrigin": true, "reference": "master"}'); then
+            echo "::error::Repository update failed. If HTTP 403 above, the deploy user is missing Repository -> Update Branch on instance $TGS_INSTANCE_ID. If HTTP 409, another job is already in flight."
+            exit 1
+          fi
           JOB_ID=$(printf '%s' "$UPDATE_RESP" | jq -r '.activeJob.id // empty')
-          echo "TGS accepted the repository update. Job id: ${JOB_ID:-<none returned>}"
-          printf '%s' "$UPDATE_RESP" | jq '.' || true
+          echo "Repo update queued. Job id: ${JOB_ID:-<none returned>}"
 
           # Step 3: trigger a deployment explicitly. Doing this as its own call
           # removes the dependency on the instance's "Compile & Deploy after
           # changes" toggle being set in the panel - the workflow always queues
           # a compile after the repo update, regardless of panel state.
           # PUT /api/DreamMaker starts a new compile job.
-          DEPLOY_RESP=$(curl -fsS -X PUT "$BASE/api/DreamMaker" \
-            -H "Accept: application/json" \
-            -H "Content-Type: application/json" \
-            -H "Api: $API_HEADER" \
-            -H "User-Agent: $UA_HEADER" \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Instance: $TGS_INSTANCE_ID" \
-            -d '{}')
-
+          # 403 here = user lacks DreamMaker.Compile (Create Deployment) on the instance.
+          if ! DEPLOY_RESP=$(tgs_call "DEPLOY" PUT "$BASE/api/DreamMaker" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              -H "Api: $API_HEADER" \
+              -H "User-Agent: $UA_HEADER" \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "Instance: $TGS_INSTANCE_ID" \
+              -d '{}'); then
+            echo "::error::Deploy request failed. If HTTP 403 above, the deploy user is missing Deployment -> Create Deployment on instance $TGS_INSTANCE_ID."
+            exit 1
+          fi
           DEPLOY_JOB=$(printf '%s' "$DEPLOY_RESP" | jq -r '.id // empty')
-          echo "TGS accepted the deploy request. Job id: ${DEPLOY_JOB:-<none returned>}"
-          printf '%s' "$DEPLOY_RESP" | jq '.' || true
+          echo "Deploy queued. Job id: ${DEPLOY_JOB:-<none returned>}"
