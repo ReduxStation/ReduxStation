@@ -1,0 +1,42 @@
+name: DMAPI updater
+
+# Periodically opens a pull request bumping code/modules/tgs and
+# code/__DEFINES/tgs.dm to the latest release of tgstation/tgstation-server.
+# The PR is NEVER auto-merged: the existing compile_maps, lint, and test
+# workflows run on it and a human reviews the diff. If anything in the new
+# DMAPI release shifts an API surface we depend on (chat command Run signature,
+# event handler args, datum field renames), the upgrade just sits in the open
+# PR until somebody fixes the consumer-side breakage.
+#
+# Safety properties:
+#   * runs on a schedule and via manual workflow_dispatch only, never on push
+#   * targets master branch
+#   * uses the canonical action published by the tgstation-server maintainers
+#   * does not write to master directly; only opens a PR
+#   * the PR has to pass our existing CI (.github/workflows/{compile_maps,test,lint}.yml)
+#     before merge is allowed
+#
+# To trigger immediately: go to Actions tab -> "DMAPI updater" -> Run workflow.
+
+on:
+  schedule:
+    # Mondays at noon UTC. Weekly cadence; faster than DMAPI typically ships
+    # so we get the bump within a week of release.
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: tgstation/tgs-dmapi-updater@v1
+        with:
+          header-path: code/__DEFINES/tgs.dm
+          library-path: code/modules/tgs
+          target-branch: master
