@@ -16,9 +16,19 @@ set -euo pipefail
 PERSIST=/tgstation/data/logs
 GAME_DIR="${1:-/tgs_instances/ResurgenceStation/Game/Live}"
 LOGS="$GAME_DIR/data/logs"
+SERVERINFO=/tgstation/data/serverinfo.json
 
 mkdir -p "$PERSIST"
 mkdir -p "$(dirname "$LOGS")"
+
+# Seed the public-log-parser's ongoing-round file if absent. The RoundStart /
+# RoundEnd event scripts overwrite this with the live value during play; this
+# block just makes sure the parser's first fetch succeeds on a brand new
+# deploy (where the file would not exist yet) so it does not fall back to
+# blocking every round.
+if [ ! -f "$SERVERINFO" ]; then
+  echo '{"servers":[]}' > "$SERVERINFO"
+fi
 
 if [ -L "$LOGS" ]; then
   ln -sfn "$PERSIST" "$LOGS"
