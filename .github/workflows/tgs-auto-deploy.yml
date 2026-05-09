@@ -63,10 +63,13 @@ jobs:
           API_HEADER="Tgstation.Server.Api/10.10.0"
           UA_HEADER="ResurgenceStation-AutoDeploy/1.0"
 
-          # Step 1: log in. POST to / with Basic auth returns a Bearer token
+          # Strip any trailing slash on TGS_URL so we can append paths cleanly.
+          BASE="${TGS_URL%/}"
+
+          # Step 1: log in. POST /api/ with Basic auth returns a Bearer token
           # in the response body's `bearer` field.
           BASIC=$(printf '%s:%s' "$TGS_USERNAME" "$TGS_PASSWORD" | base64 -w0)
-          LOGIN_RESP=$(curl -fsS -X POST "$TGS_URL/" \
+          LOGIN_RESP=$(curl -fsS -X POST "$BASE/api/" \
             -H "Accept: application/json" \
             -H "Api: $API_HEADER" \
             -H "User-Agent: $UA_HEADER" \
@@ -79,10 +82,10 @@ jobs:
             exit 1
           fi
 
-          # Step 2: tell the instance to pull the new master. If the instance
-          # has auto-deploy enabled (RepositoryUpdateAutomaticallyDeploys), TGS
-          # queues a DreamMaker compile + watchdog hot-swap automatically.
-          UPDATE_RESP=$(curl -fsS -X POST "$TGS_URL/Repository" \
+          # Step 2: tell the instance to pull the new master. PATCH /api/Repository
+          # with updateFromOrigin: true is the API equivalent of clicking "Reset
+          # repository to remote tracked reference" on the panel.
+          UPDATE_RESP=$(curl -fsS -X PATCH "$BASE/api/Repository" \
             -H "Accept: application/json" \
             -H "Content-Type: application/json" \
             -H "Api: $API_HEADER" \
@@ -92,5 +95,23 @@ jobs:
             -d '{"updateFromOrigin": true, "reference": "master"}')
 
           JOB_ID=$(printf '%s' "$UPDATE_RESP" | jq -r '.activeJob.id // empty')
-          echo "TGS accepted the update request. Job id: ${JOB_ID:-<none returned>}"
+          echo "TGS accepted the repository update. Job id: ${JOB_ID:-<none returned>}"
           printf '%s' "$UPDATE_RESP" | jq '.' || true
+
+          # Step 3: trigger a deployment explicitly. Doing this as its own call
+          # removes the dependency on the instance's "Compile & Deploy after
+          # changes" toggle being set in the panel - the workflow always queues
+          # a compile after the repo update, regardless of panel state.
+          # PUT /api/DreamMaker starts a new compile job.
+          DEPLOY_RESP=$(curl -fsS -X PUT "$BASE/api/DreamMaker" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -H "Api: $API_HEADER" \
+            -H "User-Agent: $UA_HEADER" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Instance: $TGS_INSTANCE_ID" \
+            -d '{}')
+
+          DEPLOY_JOB=$(printf '%s' "$DEPLOY_RESP" | jq -r '.id // empty')
+          echo "TGS accepted the deploy request. Job id: ${DEPLOY_JOB:-<none returned>}"
+          printf '%s' "$DEPLOY_RESP" | jq '.' || true
