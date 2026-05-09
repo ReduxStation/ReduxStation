@@ -237,12 +237,3 @@ docker-compose.override.yml
 # `import /etc/caddy/sites.d/*.caddy`. Each operator's site list is their own
 # concern; the directory only exists when the override compose mounts it.
 caddy-sites.d/
-
-# Site-local docroots referenced from docker-compose.override.yml. Add the
-# specific names you've used in your override here. The default template
-# uses ./WWW for the pokelab block.
-WWW/
-
-# Real Dockerfile for the optional pokelab service (commit
-# docker/pokelab/Dockerfile.example instead).
-docker/pokelab/Dockerfile
