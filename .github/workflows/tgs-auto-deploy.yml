@@ -118,6 +118,25 @@ jobs:
           fi
           echo "Login OK. Token length: ${#TOKEN}"
 
+          # Step 1.5: dump the authenticated user's identity and permission
+          # set so 403s downstream become diagnosable. GET /api/User reads the
+          # current user (no instance header). GET /api/InstancePermissionSet
+          # with the Instance header reads the per-instance permission set
+          # for that user, which is the one that matters for repo / deploy
+          # operations. Both are best-effort: if they fail we keep going.
+          tgs_call "WHOAMI" GET "$BASE/api/User" \
+            -H "Accept: application/json" \
+            -H "Api: $API_HEADER" \
+            -H "User-Agent: $UA_HEADER" \
+            -H "Authorization: Bearer $TOKEN" >/dev/null || true
+
+          tgs_call "INSTANCE PERMISSION SET" GET "$BASE/api/InstancePermissionSet" \
+            -H "Accept: application/json" \
+            -H "Api: $API_HEADER" \
+            -H "User-Agent: $UA_HEADER" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Instance: $TGS_INSTANCE_ID" >/dev/null || true
+
           # Step 2: tell the instance to pull the new master. PATCH /api/Repository
           # with updateFromOrigin: true is the API equivalent of clicking
           # "Reset repository to remote tracked reference" on the panel.
