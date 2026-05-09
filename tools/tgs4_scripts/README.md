@@ -7,4 +7,5 @@ TGS reads event scripts from the instance volume at `<tgs_instances>/<instance_n
 ## Files
 
 - **PostCompile.sh** - scatters `librust_g.so`, `libBSQL.so`, and `libquickwrite.so` from the freshly compiled game directory into `/usr/local/lib`, then runs `ldconfig`. Required for the game to be able to `dlopen()` these libs at runtime. Without this, DB connections fail with "BSQL library failed to provide connect operation".
+- **PreStartup.sh** - symlinks the active game's `data/logs` directory to the persistent `/tgstation/data/logs` mount so `logs.owo.fm` (Caddy file_server on the same volume) sees rounds the TGS-managed game writes. Idempotent across redeploys.
 - **PreSynchronize.sh / .bat / .ps1** - cross-platform pre-sync hooks. Currently no-op; kept as templates for future use.
