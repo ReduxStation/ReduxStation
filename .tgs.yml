@@ -1,0 +1,47 @@
+# TGS Webpanel Quick Start config.
+#
+# Used by tgstation-server's webpanel "Create Instance from Template" flow.
+# When you create a new instance and point it at this repository, the panel
+# fetches this file from the repo's default branch and pre-populates the
+# Repository, Engine, Deployment, and Server tabs from the values below.
+#
+# Manual setup is still supported and overrides anything here.
+
+version: 1
+
+# Game source. The webpanel uses these to pre-fill the Repository tab.
+# `reference` is the branch tracked by default; `update_submodules` controls
+# whether `git submodule update` runs after each clone or pull. Slimbus is
+# declared as a submodule but the gitlink is not committed in master, so
+# leave update_submodules off.
+repo:
+  remote_url: https://github.com/ResurgenceStation/ResurgenceStation
+  reference: master
+  update_submodules: false
+
+# BYOND engine pinned to the version dependencies.sh declares. Newer 516
+# minor builds (1681+) have a regressed lexer that rejects integer-suffix
+# CSS time units like `1500ms` inside multi-line strings, breaking
+# interface/stylesheet.dm. Sticking to 1680 keeps that file compiling.
+byond:
+  version: "516.1680"
+
+# DreamMaker compile target. The .dme file lives at the repo root and
+# produces hippiestation.dmb at runtime.
+deployment:
+  project_name: hippiestation
+  api_validation_security_level: trusted
+  api_validation_port: 1338
+
+# Watchdog launches DreamDaemon on this port and treats it as the live game
+# port that BYOND clients connect to. Matches GAME_PORT in the production
+# .env file.
+watchdog:
+  primary_port: 1337
+  security_level: trusted
+  visibility: public
+  startup_timeout_seconds: 60
+  topic_request_timeout_milliseconds: 5000
+  health_check_seconds: 60
+  log_output: true
+  start_with_instance: true
