@@ -50,8 +50,12 @@ jobs:
 
           if [ -z "${TGS_URL:-}" ] || [ -z "${TGS_USERNAME:-}" ] \
              || [ -z "${TGS_PASSWORD:-}" ] || [ -z "${TGS_INSTANCE_ID:-}" ]; then
-            echo "::error::One or more required secrets are unset (TGS_URL, TGS_USERNAME, TGS_PASSWORD, TGS_INSTANCE_ID)."
-            exit 1
+            # Secrets not configured yet. Skip cleanly so master CI does
+            # not stay red on every push. A maintainer populates the four
+            # secrets in repository settings; subsequent pushes then
+            # actually trigger the deploy.
+            echo "::notice::Skipping auto-deploy: one or more required secrets are unset (TGS_URL, TGS_USERNAME, TGS_PASSWORD, TGS_INSTANCE_ID). Configure them in repository settings to enable."
+            exit 0
           fi
 
           # TGS requires an Api header naming the client API version. Pick a
