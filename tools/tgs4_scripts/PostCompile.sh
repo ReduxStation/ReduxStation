@@ -51,7 +51,21 @@ scatter() {
             continue
         fi
         mkdir -p "$(dirname "$DEST")"
-        cp -f "$SRC" "$DEST"
+        # ATOMIC REPLACE, not in-place truncate.
+        #
+        # The active DreamDaemon process has these .so files mmap'd into its
+        # address space. Plain `cp -f $SRC $DEST` opens $DEST with O_TRUNC and
+        # rewrites the bytes in place — the kernel reuses the same inode, so
+        # the running process's mmap'd pages now point at half-written content.
+        # Next time DD page-faults on a code page (e.g. the next call into
+        # rust_g), it reads garbage and segfaults with BYOND printing
+        # "BUG: Crashing due to an illegal operation!".
+        #
+        # Copy to a sibling tempfile, then `mv` to atomically swap inodes.
+        # The old inode stays alive for any process that already had it open;
+        # new opens see the new file. No corrupted code pages.
+        cp -f "$SRC" "$DEST.tmp.$$"
+        mv -f "$DEST.tmp.$$" "$DEST"
     done
 }
 
