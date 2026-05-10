@@ -51,25 +51,35 @@ In the **Engine** tab, install and activate **BYOND 516.1680**. `dependencies.sh
 
 ### 5. Install PostCompile (once)
 
-Only `PostCompile` needs a manual install. From the next deploy onward, PostCompile self-installs the other event scripts (`PreStartup`, `RoundStart`, `RoundEnd`) automatically — see the loop at the bottom of `tools/tgs4_scripts/PostCompile.sh`.
+#### TGS6 event-script naming rules (read first)
+
+TGS6 enumerates event scripts under `Configuration/EventScripts/` using these rules:
+
+- **Filename extension is required.** `.sh` on Linux, `.bat` on Windows. Files without an extension are silently ignored — TGS won't tell you the script "wasn't found", it just skips. Source: [`PlatformIdentifier.cs`](https://github.com/tgstation/tgstation-server/blob/master/src/Tgstation.Server.Host/System/PlatformIdentifier.cs).
+- **Naming is case-sensitive prefix match against the event name.** A file `PostCompile.sh`, `PostCompile_metrics.sh`, and `PostCompile_chat.sh` would all fire on the `PostCompile` event in deterministic order. Source: [`Configuration.cs`](https://github.com/tgstation/tgstation-server/blob/master/src/Tgstation.Server.Host/Components/StaticFiles/Configuration.cs).
+- **Authoritative event list:** [`EventType.cs`](https://github.com/tgstation/tgstation-server/blob/master/src/Tgstation.Server.Host/Components/Events/EventType.cs) is the canonical source for which events exist, when they fire, and what arguments each receives.
+
+#### Install command
+
+Only `PostCompile.sh` needs a manual install. From the next deploy onward, PostCompile self-installs the other event scripts (`DreamDaemonPreLaunch.sh`, `RoundStart.sh`, `RoundEnd.sh`) automatically — see the loop at the bottom of `tools/tgs4_scripts/PostCompile.sh`.
 
 ```bash
 docker run --rm \
   -v "$PWD/tools/tgs4_scripts":/src:ro \
   -v resurgencestation_tgs_instances:/v \
-  alpine sh -c 'cp /src/PostCompile.sh /v/ResurgenceStation/Configuration/EventScripts/PostCompile && chmod +x /v/ResurgenceStation/Configuration/EventScripts/PostCompile'
+  alpine sh -c 'cp /src/PostCompile.sh /v/ResurgenceStation/Configuration/EventScripts/PostCompile.sh && chmod +x /v/ResurgenceStation/Configuration/EventScripts/PostCompile.sh'
 ```
 
-What each event script does once installed:
+#### What each event script does once installed
 
-| Script | Purpose |
-|---|---|
-| `PostCompile` | Scatters `librust_g.so`, `libBSQL.so`, `libquickwrite.so` into every path BYOND's `call_ext()` checks (`/usr/local/lib`, `/usr/lib/i386-linux-gnu`, the BYOND `bin/` dir, plus the game working dir under multiple name variants) so DB connections and logging do not fail with cryptic dlopen errors. Also re-installs the sibling event scripts on each compile. |
-| `PreStartup` | Symlinks the active game directory's `data/` to the persistent `/tgstation/data` mount. EVERY game-state file (logs, player_saves, npc_saves, spritesheets, photo albums, mode.txt, etc.) survives across deploys. Also seeds `serverinfo.json` so the public log-parser does not block all rounds on a brand-new deploy. |
-| `RoundStart` | Receives the new round's id from the game via `TgsTriggerEvent("RoundStart", ...)` and writes it into `/tgstation/data/serverinfo.json`. The public-log-parser polls this file and 404s the active round's logs until `RoundEnd` fires. |
-| `RoundEnd` | Receives the ended round's id and clears `/tgstation/data/serverinfo.json` so the log-parser stops hiding it. |
+| Script (file in EventScripts/) | TGS6 event | Purpose |
+|---|---|---|
+| `PostCompile.sh` | `PostCompile` (built-in, args: `<game_dir> <commit_sha> <engine_version>`) | Scatters `librust_g.so`, `libBSQL.so`, `libquickwrite.so` into every path BYOND's `call_ext()` checks (`/usr/local/lib`, `/usr/lib/i386-linux-gnu`, the BYOND `bin/` dir, plus the game working dir under multiple name variants) so DB connections and logging do not fail with cryptic dlopen errors. Also re-installs the sibling event scripts on each compile. |
+| `DreamDaemonPreLaunch.sh` | `DreamDaemonPreLaunch` (built-in, **no args**) | Symlinks the active game directory's `data/` to the persistent `/tgstation/data` mount. EVERY game-state file (logs, player_saves, npc_saves, spritesheets, photo albums, mode.txt, etc.) survives across deploys. Also seeds `serverinfo.json` so the public log-parser does not block all rounds on a brand-new deploy. |
+| `RoundStart.sh` | `RoundStart` (custom, fired by DMAPI `TgsTriggerEvent("RoundStart", list("[round_id]"))` in `code/controllers/subsystem/dbcore.dm`) | Receives the new round's id and writes it into `/tgstation/data/serverinfo.json`. The public-log-parser polls this file and 404s the active round's logs until `RoundEnd` fires. |
+| `RoundEnd.sh` | `RoundEnd` (custom, fired by DMAPI `TgsTriggerEvent("RoundEnd", list("[round_id]"))`) | Receives the ended round's id and clears `/tgstation/data/serverinfo.json` so the log-parser stops hiding it. |
 
-Trigger one deploy from the panel (or by pushing to master). PostCompile runs, scatters the libs, and copies the latest `PreStartup` / `RoundStart` / `RoundEnd` from the deployed source tree into `Configuration/EventScripts/`. From there the chain self-syncs.
+Trigger one deploy from the panel (or by pushing to master). PostCompile runs, scatters the libs, and copies the latest `DreamDaemonPreLaunch.sh` / `RoundStart.sh` / `RoundEnd.sh` from the deployed source tree into `Configuration/EventScripts/`. From there the chain self-syncs.
 
 The `tools/tgs4_scripts/` folder name is legacy from TGS3/TGS4 conventions where event scripts lived in the codebase. TGS6+ reads scripts from the instance Configuration directory instead, but we keep the folder as the reference source of truth — the auto-install copies *from* there *to* there on every compile.
 
@@ -131,23 +141,32 @@ For nuking and rebuilding game data without touching TGS state (panel users, dep
 
 ### Logs at logs.owo.fm 404 even though the game is writing round files
 
-PreStartup did not run, or it failed before symlinking. The active game directory's `data/` should be a symlink to `/tgstation/data`:
+`DreamDaemonPreLaunch.sh` did not run, or it failed before symlinking. The active game directory's `data/` should be a symlink to `/tgstation/data`:
 
 ```bash
-docker exec <tgs_container> ls -la /tgs_instances/<instance>/Game/Live/data
+docker exec <tgs_container> readlink /tgs_instances/<instance>/Game/Live/data
 ```
 
-Should show `Game/Live/data -> /tgstation/data`. If it shows a real directory instead, run the script manually:
+Should print `/tgstation/data`. If it prints nothing, `data/` is a real directory and the symlink work never happened. Run the script manually (no arguments — `DreamDaemonPreLaunch` takes none, the script always operates on Live):
 
 ```bash
-docker exec <tgs_container> /tgs_instances/<instance>/Configuration/EventScripts/PreStartup /tgs_instances/<instance>/Game/Live
+docker exec <tgs_container> /tgs_instances/<instance>/Configuration/EventScripts/DreamDaemonPreLaunch.sh
 ```
+
+If TGS reports "No event scripts starting with 'DreamDaemonPreLaunch' detected" in its logs after a deploy, the file is in the right place but missing the `.sh` extension or under an old name (`PreStartup`). Re-install per step 5 of the first-time install — PostCompile auto-installs the rest from there.
 
 ### Player saves vanish across deploys
 
-Same root cause as the logs 404 above — `data/` is not symlinked into `/tgstation/data`. Players' `preferences.sav` lives at `data/player_saves/<letter>/<ckey>/preferences.sav`; without the symlink, those writes go to the per-deploy `Game/<uuid>/` directory and die when TGS hot-swaps to a fresh game dir on the next compile.
+Same root cause as the logs 404 above — `data/` is not symlinked into `/tgstation/data`. Players' `preferences.sav` lives at `data/player_saves/<letter>/<ckey>/preferences.sav`; without the symlink those writes go to the per-deploy `Game/<uuid>/` directory and die when TGS hot-swaps to a fresh game dir on the next compile.
 
-Fix is identical: confirm or run PreStartup. Older revisions of PreStartup only symlinked `data/logs` and missed everything else; if you are recovering from that case, merge whatever's in `Game/Live/data/` into `/tgstation/data/` (rsync `-au` for newer-wins semantics) before running the new PreStartup so existing characters survive.
+Fix is identical: confirm or run `DreamDaemonPreLaunch.sh`. If you are recovering from a state where Live/data already accumulated player data the persistent volume doesn't have, merge it forward first (newer wins) before running the script so the symlink swap does not lose those characters:
+
+```bash
+docker run --rm \
+  -v resurgencestation_tgs_instances:/tgs:ro \
+  -v resurgencestation_game_data:/dst \
+  alpine sh -c 'apk add --no-cache rsync >/dev/null && rsync -aiu --exclude=logs /tgs/<instance>/Game/Live/data/ /dst/'
+```
 
 ### "libbyond.so: undefined symbol: log_write" (or similar) at world.New()
 
