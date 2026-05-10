@@ -77,6 +77,54 @@ scatter "$GAME_DIR/libquickwrite.so" quickwrite
 # the freshly scattered files in /usr/local/lib and /usr/lib/i386-linux-gnu.
 ldconfig
 
+# ── Symlink the staging deployment's data/ to the persistent mount ───────────
+# TGS6 promotes the staging uuid dir to Live during a hot-swap (round-end
+# soft-restart). The promotion does NOT fire DreamDaemonPreLaunch, so any
+# data-dir setup that script does only takes effect on watchdog cold starts.
+# To make persistence survive hot-swaps, we set up the symlink HERE on the
+# staging uuid - whichever swap mechanism TGS uses (rename/symlink/copy),
+# Live/data ends up pointing at /tgstation/data the moment the hot-swap
+# completes.
+#
+# Trade-off: TGS may launch its API-validation DreamDaemon (port 1339) AFTER
+# PostCompile returns, with the staging uuid as cwd. With this symlink in
+# place, that validation DD's transient `data/logs/config_error.{<guid>}.log`
+# lands in /tgstation/data/logs/. DreamDaemonPreLaunch.sh's sweep cleans
+# those on every cold start, and we mirror the sweep here to keep the
+# persistent volume tidy on hot-swap-only paths where DreamDaemonPreLaunch
+# does not run.
+PERSIST=/tgstation/data
+DATA_DIR="$GAME_DIR/data"
+mkdir -p "$PERSIST/logs"
+if [ -L "$DATA_DIR" ]; then
+    ln -sfn "$PERSIST" "$DATA_DIR"
+elif [ -d "$DATA_DIR" ]; then
+    # Real dir from the deployed source tree (data/ is gitignored so it
+    # should be empty, but be safe and merge anything in there forward
+    # before replacing it). Skip data/logs to avoid copying a self-loop
+    # if a previous PreLaunch already symlinked it.
+    if command -v rsync >/dev/null 2>&1; then
+        rsync -au --exclude=logs "$DATA_DIR/" "$PERSIST/" 2>/dev/null || true
+    else
+        for entry in "$DATA_DIR"/* "$DATA_DIR"/.[!.]*; do
+            [ -e "$entry" ] || continue
+            [ "$(basename "$entry")" = "logs" ] && continue
+            cp -an "$entry" "$PERSIST/" 2>/dev/null || true
+        done
+    fi
+    rm -rf "$DATA_DIR"
+    ln -sfn "$PERSIST" "$DATA_DIR"
+else
+    ln -sfn "$PERSIST" "$DATA_DIR"
+fi
+
+# Sweep any leftover validation-DD config_error.{<guid>}.log files from
+# previous deploys that escaped the persistent volume root before we
+# fixed the merge logic. Mirrors the same defensive sweep in
+# DreamDaemonPreLaunch.sh so hot-swap-only deploy chains do not let
+# them accumulate.
+find "$PERSIST/logs" -maxdepth 1 -type f -name 'config_error.{*}.log' -delete 2>/dev/null || true
+
 # ── Self-install sibling event scripts ───────────────────────────────────────
 # Every TGS deploy hot-swaps a fresh copy of the source tree into the game
 # directory. Use that to keep Configuration/EventScripts/ in lockstep with
