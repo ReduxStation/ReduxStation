@@ -5,7 +5,18 @@ Direct holder reference "splash_holder" name changed to "source" which creates a
 This allows for the "handle_state_change" proc to type check the source of the reaction as a particle effect and apply the same code it does for smoke and foam regarding dupe reduction (currently define multipliers)
 */
 /proc/chem_splash(turf/epicenter, affected_range = 3, list/datum/reagents/reactants = list(), extra_heat = 0, threatscale = 1, adminlog = 1)
+	// AUDIT-INSTRUMENTATION (temporary, removed by Bug F PR): trace the
+	// early-return paths so the runtime-log audit script can tell us
+	// whether chem_splash is bailing on a guard, on the source.total_volume
+	// check, on the BFS, or completing successfully without visible effect.
+	// Ternaries with quoted strings can't go inside [...] embeds (DM parser
+	// eats the inner quote), so each conditional value is computed into a
+	// temp var first.
+	var/audit_reactants_len = reactants ? reactants.len : 0
+	log_game("AUDIT chem_splash: epicenter=[epicenter] reactants.len=[audit_reactants_len] threatscale=[threatscale]")
 	if(!isturf(epicenter) || !reactants.len || threatscale <= 0)
+		var/audit_isturf = isturf(epicenter) ? 1 : 0
+		log_game("AUDIT chem_splash: early-return on input guards (epicenter_isturf=[audit_isturf] reactants.len=[audit_reactants_len] threatscale=[threatscale])")
 		return
 	var/has_reagents
 	var/total_reagents
@@ -15,6 +26,7 @@ This allows for the "handle_state_change" proc to type check the source of the r
 			total_reagents += R.total_volume
 
 	if(!has_reagents)
+		log_game("AUDIT chem_splash: early-return on has_reagents=FALSE (all reactants had zero total_volume)")
 		return
 
 	var/datum/reagents/source = new/datum/reagents(total_reagents*threatscale)
@@ -28,7 +40,10 @@ This allows for the "handle_state_change" proc to type check the source of the r
 	source.handle_reactions() // React them now.
 	var/atom/react = new /obj/effect/particle_effect
 	react.create_reagents(total_reagents * threatscale)
+	var/audit_react_reagents = react.reagents ? 1 : 0
+	log_game("AUDIT chem_splash: after handle_reactions source.total_volume=[source.total_volume] react.reagents_set=[audit_react_reagents]")
 	if(source.total_volume <= 0)
+		log_game("AUDIT chem_splash: early-return TRUE on source.total_volume<=0 (reactions consumed everything; no splash spread)")
 		return TRUE
 	source.copy_to(react.reagents, source.total_volume)
 	react.reagents.chem_temp = source.chem_temp
@@ -71,7 +86,9 @@ This allows for the "handle_state_change" proc to type check the source of the r
 			if(extra_heat >= 300)
 				T.hotspot_expose(extra_heat*2, 5)
 		if(!reactable.len) //Nothing to react with. Probably means we're in nullspace.
+			log_game("AUDIT chem_splash: early-return on empty reactable list (nullspace or fully blocked area)")
 			return
+		log_game("AUDIT chem_splash: applying TOUCH reactions to [reactable.len] target(s) over range [affected_range]")
 		for(var/thing in reactable)
 			var/atom/A = thing
 			var/distance = max(1,get_dist(A, epicenter))

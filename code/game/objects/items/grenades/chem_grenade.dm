@@ -213,7 +213,24 @@
 	addtimer(CALLBACK(src, .proc/prime), isnull(delayoverride)? det_time : delayoverride)
 
 /obj/item/grenade/chem_grenade/prime()
+	// AUDIT-INSTRUMENTATION (temporary, removed by Bug F PR): trace whether
+	// prime() ever fires and what chem_splash returns. Lets the runtime-log
+	// audit script tell us whether the grenade silently no-ops at the stage
+	// gate, never reaches chem_splash, or reaches chem_splash and gets a
+	// FALSE return. Ternaries with quoted strings can't go inside [...]
+	// embeds (DM parser eats the inner quote), so each conditional value
+	// is computed into a temp var first.
+	var/audit_beakers = beakers ? beakers.len : 0
+	// AREACOORD is a macro that does `.x`/`.y`/`.z` on its argument inside
+	// a [...] embed. Pass it a function call (`get_turf(src)`) and DM can't
+	// parse `get_turf(src).x` and errors with "bad embedded expression".
+	// Hoist the turf into a local var first so the macro expansion sees a
+	// plain variable.
+	var/turf/audit_turf = get_turf(src)
+	var/audit_loc = AREACOORD(audit_turf)
+	log_game("AUDIT chem_grenade/prime: src=[src] stage=[stage] beakers=[audit_beakers] loc=[audit_loc]")
 	if(stage != GRENADE_READY)
+		log_game("AUDIT chem_grenade/prime: stage gate rejected (stage=[stage] != GRENADE_READY)")
 		return
 
 	var/list/datum/reagents/reactants = list()
@@ -222,7 +239,10 @@
 
 	var/turf/detonation_turf = get_turf(src)
 
-	if(!chem_splash(detonation_turf, affected_area, reactants, ignition_temp, threatscale) && !no_splash)
+	var/splash_result = chem_splash(detonation_turf, affected_area, reactants, ignition_temp, threatscale)
+	var/audit_splash = splash_result ? "TRUE" : "FALSE"
+	log_game("AUDIT chem_grenade/prime: chem_splash returned [audit_splash] (no_splash=[no_splash])")
+	if(!splash_result && !no_splash)
 		playsound(src, 'sound/items/screwdriver2.ogg', 50, 1)
 		if(beakers.len)
 			for(var/obj/O in beakers)
