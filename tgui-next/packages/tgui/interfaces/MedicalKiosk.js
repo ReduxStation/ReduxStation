@@ -225,7 +225,7 @@ export const MedicalKiosk = props => {
                   <LabeledList.Item label="Chemical Contents">
                     {data.are_chems_present ? (
                       data.chemical_list.length ? (
-                        data.chemical_list.map(specificChem => (
+                        (data.chemical_list || []).map(specificChem => (
                           <Box
                             key={specificChem.id}
                             color="good" >
@@ -248,7 +248,7 @@ export const MedicalKiosk = props => {
                     color="bad">
                     {data.are_overdoses_present ? (
                       data.overdose_status.length ? (
-                        data.overdose_status.map(specificOD => (
+                        (data.overdose_status || []).map(specificOD => (
                           <Box key={specificOD.id}>
                             Overdosing on {specificOD.name}
                           </Box>
@@ -269,7 +269,7 @@ export const MedicalKiosk = props => {
                     color="bad">
                     {data.are_addictions_present ? (
                       data.addiction_status.length ? (
-                        data.addiction_status.map(specificAddict => (
+                        (data.addiction_status || []).map(specificAddict => (
                           <Box key={specificAddict.id}>
                             Addicted to {specificAddict.name}
                           </Box>

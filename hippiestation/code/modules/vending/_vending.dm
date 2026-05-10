@@ -90,7 +90,12 @@
 		var/list/data = list(
 			path = replacetext(replacetext("[R.product_path]", "/obj/item/", ""), "/", "-"),
 			name = R.name,
-			price = R.custom_price || default_price,
+			// Both DM `||` operands can be 0/null (e.g. a free pirate boozeomat
+			// where default_price = 0 and the product has no custom_price);
+			// `null || 0 = 0` in DM, but `null || null = null`, which surfaces
+			// to the React side as `product.price === undefined` and crashes
+			// the .map(). Coerce the result so the field is always a number.
+			price = (R.custom_price || default_price) || 0,
 			max_amount = R.max_amount,
 			ref = REF(R)
 		)
@@ -100,7 +105,7 @@
 		var/list/data = list(
 			path = replacetext(replacetext("[R.product_path]", "/obj/item/", ""), "/", "-"),
 			name = R.name,
-			price = R.custom_premium_price || extra_price,
+			price = (R.custom_premium_price || extra_price) || 0,
 			max_amount = R.max_amount,
 			ref = REF(R)
 		)
@@ -110,7 +115,7 @@
 		var/list/data = list(
 			path = replacetext(replacetext("[R.product_path]", "/obj/item/", ""), "/", "-"),
 			name = R.name,
-			price = R.custom_price || default_price,
+			price = (R.custom_price || default_price) || 0,
 			max_amount = R.max_amount,
 			ref = REF(R),
 			extended = TRUE

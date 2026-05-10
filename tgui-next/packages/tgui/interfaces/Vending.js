@@ -6,15 +6,23 @@ export const Vending = props => {
   const { act, data } = useBackend(props);
   let inventory;
   let custom = false;
+  // Default each record bucket to an empty array. The first render runs
+  // before BYOND has replied with static_data, so all four fields are
+  // initially undefined; spreading undefined throws "is not iterable",
+  // and a stray null in the spread output later trips
+  // `Cannot read properties of undefined (reading 'price')` inside the
+  // .map() below. Coalescing here means the first render produces an
+  // empty product list cleanly, then re-renders once data arrives.
+  const productRecords = data.product_records || [];
+  const coinRecords = data.coin_records || [];
+  const hiddenRecords = data.hidden_records || [];
   if (data.vending_machine_input) {
     inventory = data.vending_machine_input;
     custom = true;
   } else if (data.extended_inventory) {
-    inventory = [...data.product_records,
-      ...data.coin_records,
-      ...data.hidden_records];
+    inventory = [...productRecords, ...coinRecords, ...hiddenRecords];
   } else {
-    inventory = [...data.product_records, ...data.coin_records];
+    inventory = [...productRecords, ...coinRecords];
   }
   return (
     <Fragment>
@@ -36,10 +44,15 @@ export const Vending = props => {
       <Section
         title="Products">
         <Table>
-          {inventory.map((product => {
+          {inventory.filter(p => p).map((product => {
+            // Belt-and-braces: any record missing `price` defaults to 0
+            // here so a single malformed entry doesn't crash the whole
+            // .map() and surface as
+            // `Cannot read properties of undefined (reading 'price')`.
+            const price = product.price || 0;
             const free = ((data.department && data.user
               && data.department === data.user.department)
-              || product.price === 0 || !data.onstation || !data.scanid);
+              || price === 0 || !data.onstation || !data.scanid);
             return (
               <Table.Row key={product.name}>
                 <Table.Cell>
@@ -72,16 +85,16 @@ export const Vending = props => {
                 <Table.Cell>
                   {custom && (
                     <Button
-                      content={data.access ? 'FREE' : '$' + product.price}
+                      content={data.access ? 'FREE' : '$' + price}
                       onClick={() => act('dispense', {
                         'item': product.name,
                       })} />
                   ) || (
                     <Button
                       disabled={(!free && (!data.user
-                          || (product.price > data.user.cash)))
+                          || (price > data.user.cash)))
                           || data.stock[product.name] === 0}
-                      content={free ? 'FREE' : '$' + product.price}
+                      content={free ? 'FREE' : '$' + price}
                       onClick={() => act('vend', {
                         'ref': product.ref,
                       })} />
