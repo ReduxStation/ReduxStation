@@ -66,22 +66,28 @@ ldconfig
 # ── Self-install sibling event scripts ───────────────────────────────────────
 # Every TGS deploy hot-swaps a fresh copy of the source tree into the game
 # directory. Use that to keep Configuration/EventScripts/ in lockstep with
-# tools/tgs4_scripts/ in the repo: copy each sibling script (PreStartup,
-# RoundStart, RoundEnd, plus PostCompile itself for the *next* deploy) into
-# the instance's EventScripts dir. Drop the .sh extension because TGS runs
-# files by basename match.
+# tools/tgs4_scripts/ in the repo: copy each sibling script into the
+# instance's EventScripts dir, KEEPING the .sh extension.
 #
-# Without this, every change to one of the sibling scripts requires a manual
-# `docker cp` into the instance volume. With it, an update merged to master
-# takes effect on the next deploy automatically (with a one-deploy lag for
-# PostCompile itself, since the running PostCompile installs the new one).
+# TGS6 only enumerates event scripts whose filename matches `<EventName>*.<ext>`
+# where `<ext>` is `.sh` on Linux / `.bat` on Windows. See:
+#   https://github.com/tgstation/tgstation-server/blob/master/src/Tgstation.Server.Host/System/PlatformIdentifier.cs
+# An earlier revision of this loop dropped the .sh, which made the auto-installed
+# siblings invisible to TGS even though PostCompile was running. Preserving the
+# extension is what actually makes the chain work.
+#
+# Without this self-install, every change to one of the sibling scripts requires
+# a manual `docker cp` into the instance volume. With it, an update merged to
+# master takes effect on the next deploy automatically (with a one-deploy lag
+# for PostCompile itself, since the currently running PostCompile installs the
+# new one).
 EVENT_DST="$(dirname "$(dirname "$GAME_DIR")")/Configuration/EventScripts"
 if [ -d "$EVENT_DST" ]; then
-    for SCRIPT in PostCompile PreStartup RoundStart RoundEnd; do
+    for SCRIPT in PostCompile DreamDaemonPreLaunch RoundStart RoundEnd; do
         SRC="$GAME_DIR/tools/tgs4_scripts/$SCRIPT.sh"
         if [ -f "$SRC" ]; then
-            cp -f "$SRC" "$EVENT_DST/$SCRIPT"
-            chmod +x "$EVENT_DST/$SCRIPT"
+            cp -f "$SRC" "$EVENT_DST/$SCRIPT.sh"
+            chmod +x "$EVENT_DST/$SCRIPT.sh"
         fi
     done
 fi
