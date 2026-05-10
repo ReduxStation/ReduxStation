@@ -390,7 +390,9 @@
 				output += "</ul>"
 
 	if(window)
-		recipient << browse(output,"window=memory")
+		var/datum/browser/popup = new(recipient, "memory", "Memory")
+		popup.set_content(output)
+		popup.open()
 	else if(all_objectives.len || memory)
 		to_chat(recipient, "<i>[output]</i>")
 

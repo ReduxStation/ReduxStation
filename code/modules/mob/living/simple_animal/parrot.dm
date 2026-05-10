@@ -185,8 +185,9 @@
 	var/dat = 	"<div align='center'><b>Inventory of [name]</b></div><p>"
 	dat += "<br><B>Headset:</B> <A href='?src=[REF(src)];[ears ? "remove_inv=ears'>[ears]" : "add_inv=ears'>Nothing"]</A>"
 
-	user << browse(dat, "window=mob[REF(src)];size=325x500")
-	onclose(user, "window=mob[REF(src)]")
+	var/datum/browser/popup = new(user, "mob[REF(src)]", "[name]", 325, 500)
+	popup.set_content(dat)
+	popup.open()
 
 
 /mob/living/simple_animal/parrot/Topic(href, href_list)

@@ -24,7 +24,11 @@
 	dat += "<A href='?src=[REF(src)];refresh=1'>(Refresh)</A><BR>"
 	dat += "</body></html>"
 
-	user << browse(dat, "window=computer;size=400x500")
+	var/datum/browser/popup = new(user, "computer", "Computer", 400, 500)
+
+	popup.set_content(dat)
+
+	popup.open()
 	onclose(user, "computer")
 
 /obj/machinery/computer/mecha/Topic(href, href_list)

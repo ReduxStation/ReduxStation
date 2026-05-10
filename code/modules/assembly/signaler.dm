@@ -68,8 +68,9 @@ Code:
 <A href='byond://?src=[REF(src)];set=code'>Set</A><BR>
 [t1]
 </TT>"}
-		user << browse(dat, "window=radio")
-		onclose(user, "radio")
+		var/datum/browser/popup = new(user, "radio", "Signaler")
+		popup.set_content(dat)
+		popup.open()
 		return
 
 

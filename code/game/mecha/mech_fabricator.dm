@@ -317,7 +317,9 @@
 				</table>
 				</body>
 				</html>"}
-	user << browse(dat, "window=mecha_fabricator;size=1000x430")
+	var/datum/browser/popup = new(user, "mecha_fabricator", "Mecha Fabricator", 1000, 430)
+	popup.set_content(dat)
+	popup.open()
 	onclose(user, "mecha_fabricator")
 	return
 

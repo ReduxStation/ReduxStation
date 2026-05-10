@@ -87,7 +87,9 @@
 
 	dat += "</font>"
 	temp = ""
-	user << browse(dat, "window=tcommachine;size=520x500;can_resize=0")
+	var/datum/browser/popup = new(user, "tcommachine", "Tcommachine", 520, 500)
+	popup.set_content(dat)
+	popup.open()
 	onclose(user, "tcommachine")
 	return TRUE
 

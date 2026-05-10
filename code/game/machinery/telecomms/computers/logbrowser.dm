@@ -126,7 +126,15 @@
 
 
 
-	user << browse(dat, "window=comm_monitor;size=575x400")
+	var/datum/browser/popup = new(user, "comm_monitor", "Comm Monitor", 575, 400)
+
+
+
+	popup.set_content(dat)
+
+
+
+	popup.open()
 	onclose(user, "server_control")
 
 	temp = ""

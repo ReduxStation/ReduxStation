@@ -89,7 +89,9 @@
 	set category = "OOC"
 	var/datum/asset/changelog = get_asset_datum(/datum/asset/simple/changelog)
 	changelog.send(src)
-	src << browse('html/changelog.html', "window=changes;size=675x650")
+	var/datum/browser/popup = new(src, "changes", "Changes", 675, 650)
+	popup.set_content('html/changelog.html')
+	popup.open()
 	if(prefs.lastchangelog != GLOB.changelog_hash)
 		prefs.lastchangelog = GLOB.changelog_hash
 		prefs.save_preferences()

@@ -27,8 +27,9 @@
 
 		dat += "</ul>"
 
-	user << browse("<HEAD>[UTF8HEADER]<TITLE>[src]</TITLE></HEAD><TT>[dat]</TT>", "window=pipedispenser")
-	onclose(user, "pipedispenser")
+	var/datum/browser/popup = new(user, "pipedispenser", "[src]")
+	popup.set_content(dat)
+	popup.open()
 	return
 
 /obj/machinery/pipedispenser/Topic(href, href_list)
@@ -82,7 +83,6 @@
 	..()
 	if(default_unfasten_wrench(user, I, 40))
 		user << browse(null, "window=pipedispenser")
-
 	return TRUE
 
 
@@ -125,7 +125,9 @@
 
 		dat += "</ul>"
 
-	user << browse("<HEAD>[UTF8HEADER]<TITLE>[src]</TITLE></HEAD><TT>[dat]</TT>", "window=pipedispenser")
+	var/datum/browser/popup = new(user, "pipedispenser", "[src]")
+	popup.set_content(dat)
+	popup.open()
 	return
 
 
@@ -176,7 +178,9 @@
 <A href='?src=[REF(src)];tube=[TRANSIT_TUBE_POD]'>Transit Tube Pod</A><BR>
 "}
 
-	user << browse("<HEAD>[UTF8HEADER]<TITLE>[src]</TITLE></HEAD><TT>[dat]</TT>", "window=pipedispenser")
+	var/datum/browser/popup = new(user, "pipedispenser", "[src]")
+	popup.set_content(dat)
+	popup.open()
 	return
 
 

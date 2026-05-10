@@ -429,8 +429,9 @@ GLOBAL_VAR_INIT(total_borer_hosts_needed, 10)
 	var/html = get_html_template(content)
 
 	usr << browse(null, "window=ViewBorer\ref[src]Chems;size=600x800")
-	usr << browse(html, "window=ViewBorer\ref[src]Chems;size=600x800")
-
+	var/datum/browser/popup = new(usr, "ViewBorer\ref[src]Chems", "Borer Chemicals", 600, 800)
+	popup.set_content(html)
+	popup.open()
 	return
 
 /mob/living/simple_animal/borer/verb/hide()
