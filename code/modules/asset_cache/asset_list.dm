@@ -132,12 +132,21 @@ GLOBAL_LIST_EMPTY(asset_datums)
 /datum/asset/spritesheet/proc/Insert(sprite_name, icon/I, icon_state="", dir=SOUTH, frame=1, moving=FALSE)
 	I = icon(I, icon_state=icon_state, dir=dir, frame=frame, moving=moving)
 	if (!I || !length(icon_states(I)))  // that direction or state doesn't exist
+		log_asset("spritesheet \"[name]\" ([type]): skipped sprite \"[sprite_name]\" (icon_state=\"[icon_state]\", dir=[dir]) - icon resolved empty")
 		return
 	var/size_id = "[I.Width()]x[I.Height()]"
 	var/size = sizes[size_id]
 
 	if (sprites[sprite_name])
-		CRASH("duplicate sprite \"[sprite_name]\" in sheet [name] ([type])")
+		// Was CRASH(...) historically. Crashing here aborts the spritesheet's
+		// register() proc partway through, leaving the spritesheet PARTIAL on
+		// the client - the user-visible "first icon only" symptom on machines
+		// with overlapping icon_state names across multiple .dmi files.
+		// Log to asset.log instead and return; the original (first) sprite
+		// is preserved, the duplicate is skipped, the rest of register()
+		// completes normally. Matches upstream tg /tg/ #12767 pattern.
+		log_asset("spritesheet \"[name]\" ([type]): duplicate sprite \"[sprite_name]\" - keeping first, dropping duplicate")
+		return
 
 	if (size)
 		var/position = size[SPRSZ_COUNT]++
