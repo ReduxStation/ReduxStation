@@ -49706,7 +49706,7 @@
 	id = "Secure Storage";
 	name = "Engineering Secure Storage";
 	pixel_x = -24;
-	req_access_txt = "11"
+	req_one_access_txt = "11;20;56"
 	},
 /obj/machinery/button/door{
 	desc = "A remote control-switch for the engineering security doors.";
