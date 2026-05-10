@@ -59,9 +59,11 @@ fi
 
 merge_real_dir_into_persistent() {
   # Merge the contents of an existing real $DATA_DIR into $PERSIST,
-  # preserving newer files on either side. Skip data/logs because
-  # it's almost always already a symlink to $PERSIST/logs and copying
-  # the symlink would create a self-reference.
+  # preserving newer files on either side. Always skip data/logs:
+  # it's either a symlink back to $PERSIST/logs (self-reference if
+  # copied) or it contains validation-time stragglers that we do not
+  # want migrated forward (config_error.{<guid>}.log written by TGS's
+  # API validation DD before it exits early; see comment below).
   local src="$1"
   if command -v rsync >/dev/null 2>&1; then
     rsync -au --exclude=logs "$src/" "$PERSIST/"
@@ -69,11 +71,41 @@ merge_real_dir_into_persistent() {
     # Fall back to cp -an: never clobber, so any conflicts keep the
     # persistent (older) version. Loud about it so the operator knows
     # to install rsync if newer-wins matters for their setup.
-    echo "DreamDaemonPreLaunch: rsync not found, falling back to cp -an (older files win on conflict)." >&2
-    [ -L "$src/logs" ] && rm "$src/logs"
-    cp -an "$src"/. "$PERSIST"/ 2>/dev/null || true
+    #
+    # Walk top-level entries and skip the logs subtree explicitly. The
+    # earlier `cp -an "$src"/. "$PERSIST"/` form silently included
+    # logs/, which let the validation-time config_error.{<guid>}.log
+    # files leak into /tgstation/data/logs/ where Caddy serves them
+    # at logs.owo.fm root.
+    echo "DreamDaemonPreLaunch: rsync not found, falling back to per-entry cp -an (older files win on conflict; data/logs excluded)." >&2
+    local entry name
+    for entry in "$src"/* "$src"/.[!.]* "$src"/..?*; do
+      [ -e "$entry" ] || continue
+      name="$(basename "$entry")"
+      [ "$name" = "logs" ] && continue
+      cp -an "$entry" "$PERSIST"/ 2>/dev/null || true
+    done
   fi
 }
+
+sweep_validation_log_stragglers() {
+  # TGS's API validation step (DMAPI Validation Mode in the panel)
+  # launches DreamDaemon briefly with -invisible on the deployment's
+  # validation port to test that the new compile's DMAPI activates
+  # correctly. That DD writes its temp config-error log to
+  # `data/logs/config_error.{<GUID()>}.log` before SetupLogs() can
+  # move it into a round directory; then the validation DD exits
+  # early after "DMAPI validation, exiting...". The temp file stays
+  # behind in $PERSIST/logs/ and surfaces at the root of logs.owo.fm.
+  #
+  # Sweep them on every PreLaunch. They contain only
+  #   "TGS: Info: Activating API for version <X>"
+  #   "TGS: Info: DMAPI validation, exiting..."
+  # which is not interesting to anybody after the fact.
+  find "$PERSIST/logs" -maxdepth 1 -type f -name 'config_error.{*}.log' -delete 2>/dev/null || true
+}
+
+sweep_validation_log_stragglers
 
 if [ -L "$DATA_DIR" ]; then
   # Already a symlink. Refresh in case TGS recreated the parent.
