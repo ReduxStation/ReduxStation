@@ -17,6 +17,12 @@ SUBSYSTEM_DEF(dbcore)
 	var/datum/BSQL_Connection/connection
 	var/datum/BSQL_Operation/connectOperation
 
+	/// Set TRUE the first time SetRoundEnd() successfully writes the row,
+	/// so subsequent calls become no-ops. Lets us call SetRoundEnd from
+	/// both the natural round-end path (declare_completion -> Reboot_Helper)
+	/// AND the world.Reboot fallback without double-writing the row.
+	var/round_end_recorded = FALSE
+
 /datum/controller/subsystem/dbcore/Initialize()
 	//We send warnings to the admins during subsystem init, as the clients will be New'd and messages
 	//will queue properly with goonchat
@@ -145,12 +151,19 @@ SUBSYSTEM_DEF(dbcore)
 	qdel(query_round_start)
 
 /datum/controller/subsystem/dbcore/proc/SetRoundEnd()
+	// Idempotent: declare_completion -> Reboot_Helper calls this for natural
+	// round ends, and world.Reboot calls it as a fallback for admin-reboot
+	// and any other path that bypasses Reboot_Helper. The flag stops the
+	// SQL UPDATE and the TGS event from firing twice when both paths run.
+	if(round_end_recorded)
+		return
 	if(!Connect())
 		return
 	var/sql_station_name = sanitizeSQL(station_name())
 	var/datum/DBQuery/query_round_end = SSdbcore.NewQuery("UPDATE [format_table_name("round")] SET end_datetime = Now(), game_mode_result = '[sanitizeSQL(SSticker.mode_result)]', station_name = '[sql_station_name]' WHERE id = [GLOB.round_id]")
 	query_round_end.Execute()
 	qdel(query_round_end)
+	round_end_recorded = TRUE
 	// Notify TGS that the current round has finished so the public log
 	// parser stops hiding it.
 	if(GLOB.round_id)

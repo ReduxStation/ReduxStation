@@ -226,6 +226,25 @@ GLOBAL_VAR_INIT(tgs_initialized, FALSE)
 	qdel(src)	//shut it down
 
 /world/Reboot(reason = 0, fast_track = FALSE)
+	// Record the round's end_datetime + game_mode_result + station_name in
+	// the DB and fire the TGS RoundEnd event before any reboot path can
+	// bypass that work. Natural round end (SSticker.declare_completion ->
+	// Reboot_Helper in code/__HELPERS/roundend.dm) already calls
+	// SSdbcore.SetRoundEnd before reaching us, but admin "Reboot World",
+	// fast_track restarts, and any other code that calls world.Reboot
+	// directly used to skip it. SetRoundEnd is idempotent (flag-guarded)
+	// so the natural-path-then-here case still only writes once.
+	//
+	// Without this, rounds end with NULL end_datetime / game_mode_result
+	// in SS13_round, which:
+	//   - hides them from stats.owo.fm dashboards (slimbus filters by
+	//     end_datetime IS NOT NULL)
+	//   - keeps logs.owo.fm's RoundEnd parser update from firing, so the
+	//     round stays "in progress" until the next RoundStart overwrites
+	//     serverinfo.json (which loses the chance to mark it ended)
+	if(GLOB.round_id && SSdbcore && SSdbcore.IsConnected())
+		SSdbcore.SetRoundEnd()
+
 	if (reason || fast_track) //special reboot, do none of the normal stuff
 		if (usr)
 			log_admin("[key_name(usr)] Has requested an immediate world restart via client side debugging tools")
