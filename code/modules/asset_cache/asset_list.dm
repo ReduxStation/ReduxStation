@@ -130,10 +130,28 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	return out.Join("\n")
 
 /datum/asset/spritesheet/proc/Insert(sprite_name, icon/I, icon_state="", dir=SOUTH, frame=1, moving=FALSE)
-	I = icon(I, icon_state=icon_state, dir=dir, frame=frame, moving=moving)
-	if (!I || !length(icon_states(I)))  // that direction or state doesn't exist
-		log_asset("spritesheet \"[name]\" ([type]): skipped sprite \"[sprite_name]\" (icon_state=\"[icon_state]\", dir=[dir]) - icon resolved empty")
-		return
+	var/icon/source_icon = I
+	I = icon(source_icon, icon_state=icon_state, dir=dir, frame=frame, moving=moving)
+	if (!I || !length(icon_states(I)))
+		// Requested direction frame doesn't exist in this .dmi (e.g. pipe_item.dmi
+		// has no diagonal frames for "manifold"). Falling back to SOUTH means the
+		// sprite still renders in the spritesheet UI, even if rotated wrong - which
+		// for symmetric items like pipes is visually fine and far better than
+		// having a blank <span> in the RPD/vending menu. The actual in-world
+		// placed obj is unaffected; it uses its real .dmi with all 8 dirs.
+		// Without this, Insert returns and the CSS class for sprite_name never
+		// exists, so the .ract template's "[name][size_id] [sprite_id]" class
+		// hits nothing and the icon area renders blank.
+		if (dir != SOUTH)
+			I = icon(source_icon, icon_state=icon_state, dir=SOUTH, frame=frame, moving=moving)
+			if (I && length(icon_states(I)))
+				log_asset("spritesheet \"[name]\" ([type]): sprite \"[sprite_name]\" (icon_state=\"[icon_state]\", dir=[dir]) missing direction frame - falling back to SOUTH")
+			else
+				log_asset("spritesheet \"[name]\" ([type]): skipped sprite \"[sprite_name]\" (icon_state=\"[icon_state]\", dir=[dir]) - icon resolved empty even after SOUTH fallback")
+				return
+		else
+			log_asset("spritesheet \"[name]\" ([type]): skipped sprite \"[sprite_name]\" (icon_state=\"[icon_state]\", dir=[dir]) - icon resolved empty")
+			return
 	var/size_id = "[I.Width()]x[I.Height()]"
 	var/size = sizes[size_id]
 
