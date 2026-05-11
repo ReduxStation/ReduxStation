@@ -1,30 +1,43 @@
 name: Build native libs
 
-# Native .so / .dll files (librust_g, libBSQL, libquickwrite) are not built by
-# DreamMaker, are not tracked in git, and are NOT updated by TGS auto-deploy.
-# Pre-this-workflow, the .so files on the TGS instance's BYOND/bin/ were the
-# ones placed during initial server setup — they never got refreshed when the
-# Dockerfile changed, so feature-flag changes (e.g. enabling rust_g's `dmi`
-# feature) had zero runtime effect even after the Dockerfile change landed in
-# master.
+# Native libraries (rust_g) are committed binaries in the repo root. They get
+# used by:
+#   - .github/workflows/test.yml (Compile and Run Tests) — `cp $GAME_DIR/rust_g
+#     $BYOND_BIN/rust_g`.
+#   - tools/deploy.sh during TGS auto-deploy — `cp rust_g* $1/`, which lands
+#     them in $GAME_DIR; PostCompile.sh then scatters them to every BYOND
+#     lookup path.
+#   - The production Docker image Stage 5, which actually copies its own
+#     fresh-built rust_g.so over the committed one before runtime.
 #
-# This workflow rebuilds rust_g from the Dockerfile's rust_g_builder stage on
-# every master push that touches build inputs, re-downloads BSQL and
-# quickwrite from their canonical sources, computes sha256s, and publishes
-# all three plus the manifest to the `native-libs-latest` GitHub release.
+# Before this workflow, the committed rust_g binary was the one placed during
+# initial fork import (built with `--features="log"`, no dmi). The Dockerfile's
+# rust_g_builder stage was updated by PR #61 to build with `--features="log
+# dmi"`, but nothing rebuilt the committed binary, so:
+#   - CI tests called rustg_dmi_strip_metadata against the dmi-less .so and
+#     emitted "undefined symbol" runtime errors that failed Compile and Run
+#     Tests.
+#   - TGS auto-deploy scattered the same dmi-less .so to production, breaking
+#     every spritesheet UI.
 #
-# `tools/tgs4_scripts/PostCompile.sh` downloads from that release on every TGS
-# deploy, sha-verifies, atomically replaces $GAME_DIR/<lib>, then the existing
-# scatter loop propagates the fresh binaries to every BYOND lookup path. End
-# result: a Dockerfile change in master takes effect at the next TGS deploy
-# without anyone having to docker compose build the runtime image manually.
+# This workflow closes the gap: build rust_g via the same Dockerfile stage the
+# production runtime image uses, compare against what's currently in the repo,
+# and auto-commit the fresh binary if it differs. CI tests and TGS deploy both
+# pick up the fresh binary automatically. Future Dockerfile changes propagate
+# without anyone running docker compose build by hand.
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
+      # Also fire on feature/fix branches so the auto-commit can land on the
+      # PR itself before merge — otherwise the first run after merging a
+      # Dockerfile change has CI test failures while master self-heals.
+      - 'feat/**'
+      - 'fix/**'
+      - 'chore/**'
     paths:
       - 'Dockerfile'
-      - 'tools/tgs4_scripts/PostCompile.sh'
       - '.github/workflows/build-native-libs.yml'
   workflow_dispatch:
 
@@ -32,97 +45,89 @@ permissions:
   contents: write
 
 concurrency:
-  # Serialize so two concurrent runs don't race on the release upload.
-  group: native-libs
+  # Serialize so two concurrent runs do not race on the auto-commit push.
+  group: build-native-libs-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   build:
-    name: Build + publish native libs
+    name: Build rust_g, auto-commit if changed
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # We push back on a diff. Need the branch's actual head, not the
+          # merge ref, and an auth token with contents:write.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Build rust_g from Dockerfile rust_g_builder stage
         run: |
-          # Build only the rust_g_builder stage of the Dockerfile. This
-          # invokes the exact same cargo build the production runtime image
-          # would (32-bit, --features="log dmi"), so the binary is bit-for-bit
-          # what production would have if the runtime image were rebuilt.
+          set -euo pipefail
+          # Same stage the production Docker runtime image consumes.
           docker build --target rust_g_builder -t rust-g-builder:ci .
-          # Extract /librust_g.so from the staged image.
           docker create --name rg-extract rust-g-builder:ci
-          docker cp rg-extract:/librust_g.so ./librust_g.so
+          docker cp rg-extract:/librust_g.so ./rust_g.fresh
           docker rm rg-extract
-          # Hard arch gate, same as the Dockerfile's own check at stage 2.
-          file librust_g.so | grep -q "32-bit" \
-            || { echo "::error::librust_g.so is not 32-bit, BYOND will refuse to load it"; exit 1; }
-          # Verify the `dmi_strip_metadata` symbol is exported. If this fails
-          # the cargo build silently dropped the dmi feature again (same
-          # class of regression as the initial fork-import bug).
-          if ! nm -D --defined-only librust_g.so 2>/dev/null | grep -qw dmi_strip_metadata; then
-            echo "::warning::nm could not find dmi_strip_metadata symbol; checking via strings as fallback"
-            strings librust_g.so | grep -qw dmi_strip_metadata \
-              || { echo "::error::dmi_strip_metadata symbol missing from librust_g.so. cargo build dropped the dmi feature."; exit 1; }
+
+          # Hard gate: must be 32-bit (BYOND is 32-bit; a 64-bit .so will be
+          # silently ignored at runtime and break call_ext).
+          file rust_g.fresh | grep -q "32-bit" \
+            || { echo "::error::rust_g.fresh is not 32-bit, BYOND will refuse to load it"; file rust_g.fresh; exit 1; }
+
+          # Hard gate: must export dmi_strip_metadata. This is the symbol
+          # that the asset_cache pipeline needs; if cargo dropped the dmi
+          # feature again (or if image extraction picked up a wrong
+          # binary), we want to fail loudly here rather than commit a
+          # silently-broken binary.
+          if ! nm -D --defined-only rust_g.fresh 2>/dev/null | grep -qw dmi_strip_metadata \
+             && ! strings rust_g.fresh | grep -qw dmi_strip_metadata; then
+            echo "::error::dmi_strip_metadata symbol missing from rust_g.fresh — cargo build dropped the dmi feature"
+            exit 1
           fi
-          echo "librust_g.so built ($(stat -c %s librust_g.so) bytes), dmi symbol verified."
 
-      - name: Download BSQL (canonical source matches Dockerfile stage 5)
+          echo "rust_g.fresh OK: $(stat -c %s rust_g.fresh) bytes, sha256 $(sha256sum rust_g.fresh | cut -d' ' -f1)"
+
+      - name: Compare with committed binary
+        id: cmp
         run: |
-          curl -fsSL --retry 3 \
-            -o libBSQL.so \
-            https://github.com/tgstation/BSQL/releases/download/v1.4.0.0/libBSQL.so
-          file libBSQL.so | grep -q "ELF" \
-            || { echo "::error::libBSQL.so is not an ELF binary"; exit 1; }
-          echo "libBSQL.so downloaded ($(stat -c %s libBSQL.so) bytes)."
+          if [ ! -f rust_g ]; then
+            echo "no committed rust_g, treating as differs"
+            echo "differs=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if cmp -s rust_g rust_g.fresh; then
+            echo "committed rust_g matches fresh build, no commit needed"
+            echo "differs=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "committed rust_g differs from fresh build"
+            echo "  committed: $(sha256sum rust_g | cut -d' ' -f1)"
+            echo "  fresh:     $(sha256sum rust_g.fresh | cut -d' ' -f1)"
+            echo "differs=true" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Download quickwrite (canonical source matches Dockerfile stage 5)
-        run: |
-          curl -fsSL --retry 3 \
-            -o libquickwrite.so \
-            https://raw.githubusercontent.com/Acensti/HippieStation/master/libquickwrite.so
-          file libquickwrite.so | grep -q "ELF" \
-            || { echo "::error::libquickwrite.so is not an ELF binary"; exit 1; }
-          echo "libquickwrite.so downloaded ($(stat -c %s libquickwrite.so) bytes)."
-
-      - name: Compute sha256 manifest
-        run: |
-          # Single file with one line per lib so PostCompile can sha-verify
-          # without per-file curls. Format matches `sha256sum` output so
-          # PostCompile can pipe it to `sha256sum -c` for atomic verification.
-          sha256sum librust_g.so libBSQL.so libquickwrite.so > native-libs.sha256
-          echo "Manifest:"
-          cat native-libs.sha256
-
-      - name: Publish to native-libs-latest release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Replace committed binary and push
+        if: steps.cmp.outputs.differs == 'true'
         run: |
           set -euo pipefail
-          COMMIT_SHA=$(git rev-parse HEAD)
-          COMMIT_SHORT=$(git rev-parse --short HEAD)
-          NOTES="Auto-built from master commit ${COMMIT_SHORT}.
+          mv rust_g.fresh rust_g
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add rust_g
+          # [ci skip] prevents the auto-commit from triggering another run of
+          # this workflow. CI tests still run on the new commit because they
+          # do not honor [ci skip].
+          git commit -m "Automatic rust_g rebuild from Dockerfile rust_g_builder stage [ci skip]"
+          git push
 
-          PostCompile.sh downloads librust_g.so, libBSQL.so, libquickwrite.so
-          and native-libs.sha256 from this release on every TGS deploy and
-          verifies the sha256 manifest before installing. Always points at the
-          most recent successful build of the rust_g_builder Docker stage.
-
-          Built by: .github/workflows/build-native-libs.yml
-          Commit: ${COMMIT_SHA}"
-
-          if ! gh release view native-libs-latest >/dev/null 2>&1; then
-            gh release create native-libs-latest \
-              --title "Native libs (auto-built from Dockerfile)" \
-              --notes "$NOTES" \
-              librust_g.so libBSQL.so libquickwrite.so native-libs.sha256
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Build native libs" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.cmp.outputs.differs }}" = "true" ]; then
+            echo "Committed \`rust_g\` was stale; replaced with fresh build and pushed." >> "$GITHUB_STEP_SUMMARY"
           else
-            # Update notes and replace all assets atomically. --clobber
-            # overwrites assets of the same name without deleting and
-            # re-uploading the release.
-            gh release edit native-libs-latest --notes "$NOTES"
-            gh release upload native-libs-latest --clobber \
-              librust_g.so libBSQL.so libquickwrite.so native-libs.sha256
+            echo "Committed \`rust_g\` already matches the fresh build." >> "$GITHUB_STEP_SUMMARY"
           fi
-          echo "Release native-libs-latest updated."
