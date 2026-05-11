@@ -6,15 +6,19 @@ export const Vending = props => {
   const { act, data } = useBackend(props);
   let inventory;
   let custom = false;
+  // First render fires before BYOND has replied with ui_static_data, so
+  // every `data.<X>_records` may be undefined. `[...undefined]` throws;
+  // default to [] to keep the spread safe. The list re-populates on the
+  // next tick when the backend data arrives.
   if (data.vending_machine_input) {
     inventory = data.vending_machine_input;
     custom = true;
   } else if (data.extended_inventory) {
-    inventory = [...data.product_records,
-      ...data.coin_records,
-      ...data.hidden_records];
+    inventory = [...(data.product_records || []),
+      ...(data.coin_records || []),
+      ...(data.hidden_records || [])];
   } else {
-    inventory = [...data.product_records, ...data.coin_records];
+    inventory = [...(data.product_records || []), ...(data.coin_records || [])];
   }
   return (
     <Fragment>
@@ -72,16 +76,18 @@ export const Vending = props => {
                 <Table.Cell>
                   {custom && (
                     <Button
-                      content={data.access ? 'FREE' : '$' + product.price}
+                      content={data.access
+                        ? 'FREE'
+                        : '$' + (product.price || 0)}
                       onClick={() => act('dispense', {
                         'item': product.name,
                       })} />
                   ) || (
                     <Button
                       disabled={(!free && (!data.user
-                          || (product.price > data.user.cash)))
+                          || ((product.price || 0) > data.user.cash)))
                           || data.stock[product.name] === 0}
-                      content={free ? 'FREE' : '$' + product.price}
+                      content={free ? 'FREE' : '$' + (product.price || 0)}
                       onClick={() => act('vend', {
                         'ref': product.ref,
                       })} />
