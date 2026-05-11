@@ -71,6 +71,15 @@ jobs:
       - name: Show resulting diff (for debug)
         run: git --no-pager diff --stat tgui-next/packages/tgui/public/
 
+      - name: Upload rebuilt bundle (for cross-fork PRs where workflow cannot push back)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tgui-bundle-rebuilt
+          path: tgui-next/packages/tgui/public/
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Fail PR if bundle was not rebuilt by the author
         if: github.event_name == 'pull_request'
         run: |
