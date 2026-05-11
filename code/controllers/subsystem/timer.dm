@@ -432,6 +432,30 @@ SUBSYSTEM_DEF(timer)
 	//calculate our place in the bucket list
 	var/bucket_pos = BUCKET_POS(src)
 
+	// BUCKET_POS can yield a position that is mathematically "in the past"
+	// relative to where SSTimer's fire cursor is currently advancing through
+	// (practical_offset). The two conditions that trigger this:
+	//   * head_offset was advanced by reset_buckets() between this timer's
+	//     New() and its bucketJoin() call, leaving timeToRun behind cursor.
+	//   * timeToRun was always before head_offset for non-CLIENT_TIME timers
+	//     and the New()-time CRASH check (line 352) emitted a soft runtime
+	//     that did not actually halt this proc.
+	// In either case, DM's signed `%` for a negative dividend in BUCKET_POS
+	// surfaces as a bucket_pos <= 0, and indexing bucket_list with that
+	// throws "runtime error: list index out of bounds" at line 436. This
+	// cascades through every consumer of SSTimer (addtimer() callers like
+	// /obj/machinery/door/airlock/cycle close-pairing, chem_grenade's
+	// preprime->prime callback, all of /datum/component/area_sound effects,
+	// etc.) which then silently fail to fire — the user-visible symptoms
+	// are "cycling airlocks freeze mid-cycle", "chem grenades never
+	// detonate", and any timed game logic that quietly stops.
+	// Upstream tgstation clamps bucket_pos to practical_offset so the timer
+	// fires at the very next eligible tick rather than crashing.
+	// See: https://github.com/tgstation/tgstation/blob/master/code/controllers/subsystem/timer.dm
+	if (bucket_pos < SStimer.practical_offset && timeToRun < (SStimer.head_offset + TICKS2DS(BUCKET_LEN)))
+		WARNING("Bucket pos in past: bucket_pos = [bucket_pos] < practical_offset = [SStimer.practical_offset], timeToRun = [timeToRun] < [SStimer.head_offset + TICKS2DS(BUCKET_LEN)], Timer: [SStimer.get_timer_debug_string(src)]")
+		bucket_pos = SStimer.practical_offset // Recover bucket_pos to avoid timer blocking queue
+
 	//get the bucket for our tick
 	var/datum/timedevent/bucket_head = bucket_list[bucket_pos]
 	SStimer.bucket_count++
