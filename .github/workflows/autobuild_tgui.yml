@@ -56,8 +56,17 @@ jobs:
           cache-dependency-path: tgui-next/yarn.lock
 
       - name: Build TGUI bundle
-        run: bin/tgui --ci
         working-directory: ./tgui-next
+        shell: bash
+        run: |
+          # ubuntu-latest ships a global webpack-cli (v5+) at /usr/local/bin/webpack
+          # whose JS uses the ||= operator (Node 16+ only). tgui-next/bin/tgui
+          # APPENDS node_modules/.bin to PATH so the global wins on bare `webpack`
+          # invocations, and the build crashes on Node 14 with "Unexpected token '||='".
+          # Prepend the local bin path so the pinned webpack-cli@3.3.10 from yarn.lock
+          # is what runs.
+          export PATH="$PWD/node_modules/.bin:$PATH"
+          bin/tgui --ci
 
       - name: Show resulting diff (for debug)
         run: git --no-pager diff --stat tgui-next/packages/tgui/public/
