@@ -101,11 +101,14 @@
 		return
 	user.set_machine(src)
 
-
-	var/dat = 	"<div align='center'><b>Inventory of [name]</b></div><p>"
+	// Full HTML scaffolding — without it modern BYOND renders the raw markup
+	// as literal text (Bug D).
+	var/dat = "<!DOCTYPE html><html><head>[UTF8HEADER]<title>Inventory of [name]</title></head><body>"
+	dat += "<div align='center'><b>Inventory of [name]</b></div><p>"
 	dat += "<br><B>Head:</B> <A href='?src=[REF(src)];[inventory_head ? "remove_inv=head'>[inventory_head]" : "add_inv=head'>Nothing"]</A>"
 	dat += "<br><B>Back:</B> <A href='?src=[REF(src)];[inventory_back ? "remove_inv=back'>[inventory_back]" : "add_inv=back'>Nothing"]</A>"
 	dat += "<br><B>Collar:</B> <A href='?src=[REF(src)];[pcollar ? "remove_inv=collar'>[pcollar]" : "add_inv=collar'>Nothing"]</A>"
+	dat += "</body></html>"
 
 	user << browse(dat, "window=mob[REF(src)];size=325x500")
 	onclose(user, "mob[REF(src)]")

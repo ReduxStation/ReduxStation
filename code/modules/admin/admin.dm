@@ -410,7 +410,10 @@
 	if(!check_rights(0))
 		return
 
-	var/dat = {"<html><body>
+	// Full HTML scaffolding — modern BYOND renders raw markup as literal text
+	// without DOCTYPE + head + charset meta (Bug D). The previous
+	// "<html><body>" was missing all three.
+	var/dat = {"<!DOCTYPE html><html><head>[UTF8HEADER]<title>Game Panel</title></head><body>
 		<center><B>Game Panel</B></center><hr>
 		<A href='?src=[REF(src)];[HrefToken()];c_mode=1'>Change Game Mode</A><br>
 		"}

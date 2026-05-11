@@ -54,7 +54,9 @@
 	. = ..()
 	if(is_secured(user))
 		var/t1 = "-------"
-		var/dat = {"
+		// Full HTML scaffolding — without it modern BYOND renders the raw
+		// markup as literal text (Bug D).
+		var/dat = {"<!DOCTYPE html><html><head>[UTF8HEADER]<title>Signaler</title></head><body>
 <TT>
 
 <A href='byond://?src=[REF(src)];send=1'>Send Signal</A><BR>
@@ -67,7 +69,8 @@ Code:
 [src.code]
 <A href='byond://?src=[REF(src)];set=code'>Set</A><BR>
 [t1]
-</TT>"}
+</TT>
+</body></html>"}
 		user << browse(dat, "window=radio")
 		onclose(user, "radio")
 		return
