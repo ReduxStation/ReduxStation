@@ -69,6 +69,59 @@ scatter() {
     done
 }
 
+# ── Fetch latest native libs from the build-native-libs release ──────────────
+# rust_g / BSQL / quickwrite are not produced by DreamMaker and are not in
+# git. The `.github/workflows/build-native-libs.yml` workflow rebuilds them
+# on every Dockerfile change and uploads to the `native-libs-latest` GitHub
+# release. Without this fetch, $GAME_DIR/rust_g (etc.) is whatever stale
+# binary lived there from the initial server bootstrap, and Dockerfile
+# changes never take runtime effect because the TGS deploy pipeline
+# doesn't rebuild the Docker runtime image — only this download path
+# closes that gap.
+#
+# Verify sha256 against the release's native-libs.sha256 manifest before
+# installing. If the download fails (transient network, release not yet
+# created on a fresh repo, GitHub down) keep whatever the deploy already
+# placed at $GAME_DIR — running with the previous .so is strictly better
+# than overwriting with garbage. If sha verification fails, same: keep
+# existing.
+RELEASE_URL="https://github.com/ResurgenceStation/ResurgenceStation/releases/download/native-libs-latest"
+NATIVE_TMP=$(mktemp -d)
+if curl -fsSL --retry 3 --max-time 60 \
+        -o "$NATIVE_TMP/native-libs.sha256" \
+        "$RELEASE_URL/native-libs.sha256" 2>/dev/null; then
+    # Download each lib referenced in the manifest, sha-verify, atomic mv
+    # into $GAME_DIR so the scatter loop below sees the fresh binary.
+    download_ok=true
+    for LIB in librust_g.so libBSQL.so libquickwrite.so; do
+        if ! curl -fsSL --retry 3 --max-time 120 \
+                -o "$NATIVE_TMP/$LIB" \
+                "$RELEASE_URL/$LIB" 2>/dev/null; then
+            echo "PostCompile: WARN download $LIB failed, keeping existing"
+            download_ok=false
+            break
+        fi
+    done
+
+    if $download_ok && (cd "$NATIVE_TMP" && sha256sum -c native-libs.sha256 >/dev/null 2>&1); then
+        # All three libs downloaded + sha-verified as a unit. Place atomically.
+        # $GAME_DIR/rust_g (no .so) is the canonical name `scatter` reads from.
+        mv -f "$NATIVE_TMP/librust_g.so"     "$GAME_DIR/rust_g"
+        mv -f "$NATIVE_TMP/libBSQL.so"       "$GAME_DIR/libBSQL.so"
+        mv -f "$NATIVE_TMP/libquickwrite.so" "$GAME_DIR/libquickwrite.so"
+        echo "PostCompile: fetched fresh native libs from $RELEASE_URL"
+    else
+        echo "PostCompile: WARN sha256 manifest verification failed, keeping existing libs"
+    fi
+else
+    # First-run case (no release yet) is expected on a fresh repo. Subsequent
+    # deploys will pick up the libs once build-native-libs has run at least
+    # once. Until then, the existing scatter source files (placed by initial
+    # bootstrap or a previous good deploy) carry through.
+    echo "PostCompile: WARN could not reach $RELEASE_URL, keeping existing libs"
+fi
+rm -rf "$NATIVE_TMP"
+
 scatter "$GAME_DIR/rust_g"           rust_g
 scatter "$GAME_DIR/libBSQL.so"       BSQL
 scatter "$GAME_DIR/libquickwrite.so" quickwrite

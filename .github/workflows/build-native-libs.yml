@@ -1,0 +1,128 @@
+name: Build native libs
+
+# Native .so / .dll files (librust_g, libBSQL, libquickwrite) are not built by
+# DreamMaker, are not tracked in git, and are NOT updated by TGS auto-deploy.
+# Pre-this-workflow, the .so files on the TGS instance's BYOND/bin/ were the
+# ones placed during initial server setup — they never got refreshed when the
+# Dockerfile changed, so feature-flag changes (e.g. enabling rust_g's `dmi`
+# feature) had zero runtime effect even after the Dockerfile change landed in
+# master.
+#
+# This workflow rebuilds rust_g from the Dockerfile's rust_g_builder stage on
+# every master push that touches build inputs, re-downloads BSQL and
+# quickwrite from their canonical sources, computes sha256s, and publishes
+# all three plus the manifest to the `native-libs-latest` GitHub release.
+#
+# `tools/tgs4_scripts/PostCompile.sh` downloads from that release on every TGS
+# deploy, sha-verifies, atomically replaces $GAME_DIR/<lib>, then the existing
+# scatter loop propagates the fresh binaries to every BYOND lookup path. End
+# result: a Dockerfile change in master takes effect at the next TGS deploy
+# without anyone having to docker compose build the runtime image manually.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'Dockerfile'
+      - 'tools/tgs4_scripts/PostCompile.sh'
+      - '.github/workflows/build-native-libs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  # Serialize so two concurrent runs don't race on the release upload.
+  group: native-libs
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build + publish native libs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build rust_g from Dockerfile rust_g_builder stage
+        run: |
+          # Build only the rust_g_builder stage of the Dockerfile. This
+          # invokes the exact same cargo build the production runtime image
+          # would (32-bit, --features="log dmi"), so the binary is bit-for-bit
+          # what production would have if the runtime image were rebuilt.
+          docker build --target rust_g_builder -t rust-g-builder:ci .
+          # Extract /librust_g.so from the staged image.
+          docker create --name rg-extract rust-g-builder:ci
+          docker cp rg-extract:/librust_g.so ./librust_g.so
+          docker rm rg-extract
+          # Hard arch gate, same as the Dockerfile's own check at stage 2.
+          file librust_g.so | grep -q "32-bit" \
+            || { echo "::error::librust_g.so is not 32-bit, BYOND will refuse to load it"; exit 1; }
+          # Verify the `dmi_strip_metadata` symbol is exported. If this fails
+          # the cargo build silently dropped the dmi feature again (same
+          # class of regression as the initial fork-import bug).
+          if ! nm -D --defined-only librust_g.so 2>/dev/null | grep -qw dmi_strip_metadata; then
+            echo "::warning::nm could not find dmi_strip_metadata symbol; checking via strings as fallback"
+            strings librust_g.so | grep -qw dmi_strip_metadata \
+              || { echo "::error::dmi_strip_metadata symbol missing from librust_g.so. cargo build dropped the dmi feature."; exit 1; }
+          fi
+          echo "librust_g.so built ($(stat -c %s librust_g.so) bytes), dmi symbol verified."
+
+      - name: Download BSQL (canonical source matches Dockerfile stage 5)
+        run: |
+          curl -fsSL --retry 3 \
+            -o libBSQL.so \
+            https://github.com/tgstation/BSQL/releases/download/v1.4.0.0/libBSQL.so
+          file libBSQL.so | grep -q "ELF" \
+            || { echo "::error::libBSQL.so is not an ELF binary"; exit 1; }
+          echo "libBSQL.so downloaded ($(stat -c %s libBSQL.so) bytes)."
+
+      - name: Download quickwrite (canonical source matches Dockerfile stage 5)
+        run: |
+          curl -fsSL --retry 3 \
+            -o libquickwrite.so \
+            https://raw.githubusercontent.com/Acensti/HippieStation/master/libquickwrite.so
+          file libquickwrite.so | grep -q "ELF" \
+            || { echo "::error::libquickwrite.so is not an ELF binary"; exit 1; }
+          echo "libquickwrite.so downloaded ($(stat -c %s libquickwrite.so) bytes)."
+
+      - name: Compute sha256 manifest
+        run: |
+          # Single file with one line per lib so PostCompile can sha-verify
+          # without per-file curls. Format matches `sha256sum` output so
+          # PostCompile can pipe it to `sha256sum -c` for atomic verification.
+          sha256sum librust_g.so libBSQL.so libquickwrite.so > native-libs.sha256
+          echo "Manifest:"
+          cat native-libs.sha256
+
+      - name: Publish to native-libs-latest release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          COMMIT_SHA=$(git rev-parse HEAD)
+          COMMIT_SHORT=$(git rev-parse --short HEAD)
+          NOTES="Auto-built from master commit ${COMMIT_SHORT}.
+
+          PostCompile.sh downloads librust_g.so, libBSQL.so, libquickwrite.so
+          and native-libs.sha256 from this release on every TGS deploy and
+          verifies the sha256 manifest before installing. Always points at the
+          most recent successful build of the rust_g_builder Docker stage.
+
+          Built by: .github/workflows/build-native-libs.yml
+          Commit: ${COMMIT_SHA}"
+
+          if ! gh release view native-libs-latest >/dev/null 2>&1; then
+            gh release create native-libs-latest \
+              --title "Native libs (auto-built from Dockerfile)" \
+              --notes "$NOTES" \
+              librust_g.so libBSQL.so libquickwrite.so native-libs.sha256
+          else
+            # Update notes and replace all assets atomically. --clobber
+            # overwrites assets of the same name without deleting and
+            # re-uploading the release.
+            gh release edit native-libs-latest --notes "$NOTES"
+            gh release upload native-libs-latest --clobber \
+              librust_g.so libBSQL.so libquickwrite.so native-libs.sha256
+          fi
+          echo "Release native-libs-latest updated."
