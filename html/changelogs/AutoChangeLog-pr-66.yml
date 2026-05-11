@@ -1,0 +1,6 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: Vending machines, chem dispenser, achievements, guardian and medical
+      kiosk UIs render correctly on first open instead of failing with a JS 
+      crash. Free items show \"Free\" / \"$0\" instead of \"$NaN\".
