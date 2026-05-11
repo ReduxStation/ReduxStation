@@ -56,15 +56,23 @@
 
 
 /obj/item/grenade/attack_self(mob/user)
+	log_game("AUDIT grenade/attack_self: src=[src] type=[type] user=[user ? key_name(user) : "null"] active=[active]")
 	if(!active)
 		if(clown_check(user))
+			log_game("AUDIT grenade/attack_self: src=[src] clown_check passed, calling preprime")
 			preprime(user)
+		else
+			log_game("AUDIT grenade/attack_self: src=[src] clown_check returned FALSE - main preprime skipped (may have been called inside clown_check with short fuse)")
+	else
+		log_game("AUDIT grenade/attack_self: src=[src] already active=TRUE - no-op")
 
 /obj/item/grenade/proc/log_grenade(mob/user, turf/T)
 	log_bomber(user, "has primed a", src, "for detonation")
 
 /obj/item/grenade/proc/preprime(mob/user, delayoverride, msg = TRUE, volume = 60)
 	var/turf/T = get_turf(src)
+	var/audit_delay = isnull(delayoverride) ? det_time : delayoverride
+	log_game("AUDIT grenade/preprime: src=[src] type=[type] user=[user ? key_name(user) : "null"] det_time=[det_time] delayoverride=[delayoverride ? delayoverride : "null"] effective=[audit_delay]")
 	log_grenade(user, T) //Inbuilt admin procs already handle null users
 	if(user)
 		add_fingerprint(user)
@@ -73,7 +81,8 @@
 	playsound(src, pick('sound/weapons/armbomb.ogg', 'hippiestation/sound/halflife/takecover.ogg', 'hippiestation/sound/halflife/grenade.ogg'), volume, 0)
 	active = TRUE
 	icon_state = initial(icon_state) + "_active"
-	addtimer(CALLBACK(src, .proc/prime), isnull(delayoverride)? det_time : delayoverride)
+	addtimer(CALLBACK(src, .proc/prime), audit_delay)
+	log_game("AUDIT grenade/preprime: src=[src] timer queued for prime() in [audit_delay] deciseconds")
 
 /obj/item/grenade/proc/prime()
 
