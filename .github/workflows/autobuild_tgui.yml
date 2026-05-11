@@ -1,36 +1,88 @@
 name: Autobuild TGUI
 
+# Runs on PRs that touch tgui-next AND on push to master.
+#
+# On PR: rebuild the bundle and FAIL CI if the rebuilt artifact differs from
+# what the PR committed. This forces every PR that changes JS to also commit
+# the freshly built tgui.bundle.js, so testmerges (which don't go through the
+# Docker compile stage) ship the source author's actual changes.
+#
+# On master push: rebuild the bundle and auto-commit the result. Keeps master
+# self-healing if a merge ever lands with a stale bundle.
+
 on:
   push:
     branches:
-      - 'master'
+      - master
+    # No path filter on master pushes — even non-tgui changes can trigger a
+    # bundle-staleness rebuild here. Cheap, keeps master self-healing if a
+    # PR ever lands with an out-of-date bundle.
+  pull_request:
     paths:
-      - 'tgui-next/**.js'
-      - 'tgui-next/**.scss'
+      - 'tgui-next/**'
 
 jobs:
   build:
-    name: Rebuild TGUI
+    name: Rebuild TGUI bundle
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v1
+      - name: Checkout (PR head)
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 25
+          # Need to push back to the PR branch from CI, so check out the
+          # actual head (not the merge ref) and persist credentials.
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Checkout (master push)
+        if: github.event_name == 'push'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
       - name: Setup Node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
-          node-version: '>=12.13'
-      - name: Build TGUI
+          # Node 14 is the last version that builds webpack-4 projects without
+          # needing NODE_OPTIONS=--openssl-legacy-provider. Pinning the exact
+          # version keeps the bundle byte-identical across rebuilds, so the
+          # PR-gate diff check is reliable.
+          node-version: '14.21.3'
+          cache: 'yarn'
+          cache-dependency-path: tgui-next/yarn.lock
+
+      - name: Build TGUI bundle
         run: bin/tgui --ci
         working-directory: ./tgui-next
-      - name: Commit Artifacts
+
+      - name: Show resulting diff (for debug)
+        run: git --no-pager diff --stat tgui-next/packages/tgui/public/
+
+      - name: Fail PR if bundle was not rebuilt by the author
+        if: github.event_name == 'pull_request'
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "TGUI"
-          git pull origin master
-          git commit -m "Automatic TGUI Rebuild [ci skip]" -a || true
-      - name: Push Artifacts
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.ACTION_SECRET }}
+          if ! git diff --exit-code tgui-next/packages/tgui/public/; then
+            echo
+            echo "::error::tgui-next/packages/tgui/public/tgui.bundle.js is out of date."
+            echo "::error::Rerun \`bin/tgui --ci\` from inside tgui-next/ locally and commit the rebuilt bundle into this PR."
+            echo "::error::Without this, JS changes in your PR will not reach the runtime (testmerges compile against the committed bundle, not the source)."
+            exit 1
+          fi
+          echo "Bundle is up to date."
+
+      - name: Auto-commit and push (master only)
+        if: github.event_name == 'push'
+        run: |
+          if git diff --exit-code tgui-next/packages/tgui/public/; then
+            echo "Bundle is up to date."
+            exit 0
+          fi
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add tgui-next/packages/tgui/public/
+          git commit -m "Automatic TGUI bundle rebuild [ci skip]"
+          git push
