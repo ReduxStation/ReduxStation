@@ -182,11 +182,15 @@
 /mob/living/simple_animal/parrot/show_inv(mob/user)
 	user.set_machine(src)
 
-	var/dat = 	"<div align='center'><b>Inventory of [name]</b></div><p>"
+	// Full HTML scaffolding — without it modern BYOND renders the raw markup
+	// as literal text (Bug D).
+	var/dat = "<!DOCTYPE html><html><head>[UTF8HEADER]<title>Inventory of [name]</title></head><body>"
+	dat += "<div align='center'><b>Inventory of [name]</b></div><p>"
 	dat += "<br><B>Headset:</B> <A href='?src=[REF(src)];[ears ? "remove_inv=ears'>[ears]" : "add_inv=ears'>Nothing"]</A>"
+	dat += "</body></html>"
 
 	user << browse(dat, "window=mob[REF(src)];size=325x500")
-	onclose(user, "window=mob[REF(src)]")
+	onclose(user, "mob[REF(src)]")
 
 
 /mob/living/simple_animal/parrot/Topic(href, href_list)

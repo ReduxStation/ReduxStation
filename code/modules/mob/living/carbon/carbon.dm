@@ -178,7 +178,9 @@
 
 /mob/living/carbon/show_inv(mob/user)
 	user.set_machine(src)
-	var/dat = {"
+	// Wrap in full <!DOCTYPE><html><head><body> scaffolding. Modern BYOND
+	// webviews render raw markup as literal text without it (Bug D).
+	var/dat = {"<!DOCTYPE html><html><head>[UTF8HEADER]<title>[name]</title></head><body>
 	<HR>
 	<B><FONT size=3>[name]</FONT></B>
 	<HR>
@@ -213,6 +215,7 @@
 	dat += {"
 	<BR>
 	<BR><A href='?src=[REF(user)];mach_close=mob[REF(src)]'>Close</A>
+	</body></html>
 	"}
 	user << browse(dat, "window=mob[REF(src)];size=325x500")
 	onclose(user, "mob[REF(src)]")
