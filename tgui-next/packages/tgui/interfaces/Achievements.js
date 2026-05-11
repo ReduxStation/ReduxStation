@@ -51,12 +51,12 @@ export const Achievements = props => {
   const { data } = useBackend(props);
   return (
     <Tabs>
-      {data.categories.map(category => (
+      {(data.categories || []).map(category => (
         <Tabs.Tab
           key={category}
           label={category}>
           <Box as="Table">
-            {data.achievements
+            {(data.achievements || [])
               .filter(x => x.category === category)
               .map(achievement => {
                 if (achievement.score) {
@@ -84,7 +84,7 @@ export const Achievements = props => {
       <Tabs.Tab
         label="High Scores">
         <Tabs vertical>
-          {data.highscore.map(highscore => (
+          {(data.highscore || []).map(highscore => (
             <Tabs.Tab
               key={highscore.name}
               label={highscore.name}>

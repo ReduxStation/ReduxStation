@@ -90,7 +90,11 @@
 		var/list/data = list(
 			path = replacetext(replacetext("[R.product_path]", "/obj/item/", ""), "/", "-"),
 			name = R.name,
-			price = R.custom_price || default_price,
+			// DM `||` returns the LAST falsy operand when all are falsy, so
+			// `null || null` returns null (not 0), which serialises to JSON
+			// null and reads as undefined on the JS side, then `'$' + price`
+			// becomes "$undefined" or NaN. Trailing `|| 0` forces a number.
+			price = (R.custom_price || default_price) || 0,
 			max_amount = R.max_amount,
 			ref = REF(R)
 		)
@@ -100,7 +104,7 @@
 		var/list/data = list(
 			path = replacetext(replacetext("[R.product_path]", "/obj/item/", ""), "/", "-"),
 			name = R.name,
-			price = R.custom_premium_price || extra_price,
+			price = (R.custom_premium_price || extra_price) || 0,
 			max_amount = R.max_amount,
 			ref = REF(R)
 		)
@@ -110,7 +114,7 @@
 		var/list/data = list(
 			path = replacetext(replacetext("[R.product_path]", "/obj/item/", ""), "/", "-"),
 			name = R.name,
-			price = R.custom_price || default_price,
+			price = (R.custom_price || default_price) || 0,
 			max_amount = R.max_amount,
 			ref = REF(R),
 			extended = TRUE

@@ -52,7 +52,7 @@ export const Guardian = props => {
           key="stats"
           label="Stats">
           <LabeledList>
-            {data.ratedskills.map(skill => (
+            {(data.ratedskills || []).map(skill => (
               <LabeledList.Item
                 key={skill.name}
                 className="candystripe"
@@ -88,7 +88,7 @@ export const Guardian = props => {
         <Tabs.Tab
           key="ability_major"
           label="Major Ability">
-          {data.abilities_major.map(ability => (
+          {(data.abilities_major || []).map(ability => (
             <LabeledList.Item
               key={ability.name}
               className="candystripe"
@@ -107,7 +107,7 @@ export const Guardian = props => {
         <Tabs.Tab
           key="ability_minor"
           label="Minor Abilities">
-          {data.abilities_minor.map(ability => (
+          {(data.abilities_minor || []).map(ability => (
             <LabeledList.Item
               key={ability.name}
               className="candystripe"
@@ -132,7 +132,7 @@ export const Guardian = props => {
           <Section
             title="Stats">
             <LabeledList>
-              {data.ratedskills.map(skill => (
+              {(data.ratedskills || []).map(skill => (
                 <LabeledList.Item
                   key={skill.name}
                   className="candystripe"
@@ -146,7 +146,7 @@ export const Guardian = props => {
             <Section
               title="Major Ability">
               <LabeledList>
-                {data.abilities_major.map(ability => (
+                {(data.abilities_major || []).map(ability => (
                   (!!ability.selected && (
                     <LabeledList.Item
                       key={ability.name}
@@ -161,7 +161,7 @@ export const Guardian = props => {
           <Section
             title="Minor Abilities">
             <LabeledList>
-              {data.abilities_minor.map(ability => (
+              {(data.abilities_minor || []).map(ability => (
                 (!!ability.selected && (
                   <LabeledList.Item
                     key={ability.name}

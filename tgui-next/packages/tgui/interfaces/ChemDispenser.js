@@ -73,7 +73,7 @@ export const ChemDispenser = props => {
           ))
         )}>
         <Box mr={-1}>
-          {data.chemicals.map(chemical => (
+          {(data.chemicals || []).map(chemical => (
             <Button key={chemical.id}
               icon="tint"
               width="129.5px"
