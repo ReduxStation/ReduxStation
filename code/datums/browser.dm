@@ -437,9 +437,19 @@
 // to pass a "close=1" parameter to the atom's Topic() proc for special handling.
 // Otherwise, the user mob's machine var will be reset directly.
 //
-/proc/onclose(mob/user, windowid, atom/ref=null)
-	if(!user.client)
+/proc/onclose(user, windowid, atom/ref=null)
+	// user can arrive as either a /mob (most call sites) or a /client (a
+	// /client/verb context that passes src). Both are valid winset() targets;
+	// only check .client when it's a mob, otherwise `user.client` runtimes
+	// with "undefined variable /client/var/client" because /client has no
+	// .client field.
+	if(!user)
 		return
+	if(ismob(user))
+		var/mob/M = user
+		if(!M.client)
+			return
+
 	var/param = "null"
 	if(ref)
 		param = "[REF(ref)]"
