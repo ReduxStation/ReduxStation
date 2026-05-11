@@ -456,6 +456,30 @@ SUBSYSTEM_DEF(timer)
 		WARNING("Bucket pos in past: bucket_pos = [bucket_pos] < practical_offset = [SStimer.practical_offset], timeToRun = [timeToRun] < [SStimer.head_offset + TICKS2DS(BUCKET_LEN)], Timer: [SStimer.get_timer_debug_string(src)]")
 		bucket_pos = SStimer.practical_offset // Recover bucket_pos to avoid timer blocking queue
 
+	// Hard clamp safety net. The conditional clamp above mirrors upstream
+	// tgstation but only catches the "bucket_pos in the past" path. Empirical
+	// post-merge runtime evidence (timer.dm:460 still throwing list index out
+	// of bounds after the conditional clamp landed) shows other code paths
+	// can still produce a bucket_pos outside [1, bucket_list.len]:
+	//   - timeToRun >= head_offset + TICKS2DS(BUCKET_LEN) bypasses the second
+	//     clause above and a negative bucket_pos from DM's signed `%`
+	//     escapes. In theory TIMER_MAX should have redirected this to
+	//     second_queue at the top of bucketJoin, but TIMER_MAX uses
+	//     practical_offset in its computation and can land BELOW
+	//     head_offset + TICKS2DS(BUCKET_LEN), opening a window where a
+	//     timer is "too far in future for buckets, not far enough for
+	//     second_queue" and reaches the bucket indexing with a bad pos.
+	//   - bucket_list was resized smaller than BUCKET_POS expects (e.g. if
+	//     world.fps changed since PreInit so BUCKET_LEN at evaluation
+	//     differs from when bucket_list.len was set).
+	// The conditional clamp + this unconditional one together cover both:
+	// the conditional case still fires its WARNING (preserving diagnostic
+	// signal), the unconditional one fires another WARNING for anything
+	// else, and the bucket index is guaranteed in-range before the read.
+	if (bucket_pos < 1 || bucket_pos > length(bucket_list))
+		WARNING("bucket_pos = [bucket_pos] out of range 1 to [length(bucket_list)] after first clamp; hard-clamping. timeToRun = [timeToRun], head_offset = [SStimer.head_offset], practical_offset = [SStimer.practical_offset], BUCKET_LEN = [BUCKET_LEN], Timer: [SStimer.get_timer_debug_string(src)]")
+		bucket_pos = clamp(SStimer.practical_offset, 1, length(bucket_list))
+
 	//get the bucket for our tick
 	var/datum/timedevent/bucket_head = bucket_list[bucket_pos]
 	SStimer.bucket_count++
