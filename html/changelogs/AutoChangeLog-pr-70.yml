@@ -1,0 +1,7 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: "SSTimer.bucketJoin no longer throws list-index-out-of-bounds when a timer's
+      bucket_pos escapes the conditional clamp added in PR #68. Stacked unconditional
+      clamp guarantees the bucket index is in range before reading, with a diagnostic
+      WARNING for any case that lands there."
