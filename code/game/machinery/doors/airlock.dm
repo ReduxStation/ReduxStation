@@ -43,7 +43,7 @@
 	icon_state = "closed"
 	max_integrity = 300
 	var/normal_integrity = AIRLOCK_INTEGRITY_N
-	integrity_failure = 70
+	integrity_failure = 0.233
 	damage_deflection = AIRLOCK_DAMAGE_DEFLECTION_N
 	autoclose = TRUE
 	secondsElectrified = MACHINE_NOT_ELECTRIFIED //How many seconds remain until the door is no longer electrified. -1/MACHINE_ELECTRIFIED_PERMANENT = permanently electrified until someone fixes it.
