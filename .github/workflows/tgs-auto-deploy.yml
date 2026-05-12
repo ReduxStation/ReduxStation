@@ -137,6 +137,59 @@ jobs:
             -H "Authorization: Bearer $TOKEN" \
             -H "Instance: $TGS_INSTANCE_ID" >/dev/null || true
 
+          # Helper: poll a TGS job ID until it completes, fail the step loudly
+          # if the job ended with an exception. Without this the workflow
+          # only verifies the API call returned 2xx ("job accepted"); it does
+          # NOT verify the job itself succeeded. That gap silently masked 10+
+          # broken auto-deploys in a row when a stale testmerge conflicted
+          # with origin/master and every Repository update job died with
+          # `JobException: A merge conflict occurred`.
+          wait_for_job() {
+            local label="$1"
+            local job_id="$2"
+            local timeout_seconds="${3:-600}"
+            if [ -z "$job_id" ] || [ "$job_id" = "null" ]; then
+              echo "::warning::$label: no job id returned by API - skipping wait"
+              return 0
+            fi
+            local deadline=$(( $(date +%s) + timeout_seconds ))
+            echo "Polling $label job $job_id (timeout ${timeout_seconds}s)..."
+            while true; do
+              local body status now
+              now=$(date +%s)
+              if [ $now -gt $deadline ]; then
+                echo "::error::$label job $job_id did not complete within ${timeout_seconds}s. Likely TGS-side hang; check panel."
+                return 1
+              fi
+              body=$(tgs_call "$label POLL" GET "$BASE/api/Job/$job_id" \
+                -H "Accept: application/json" \
+                -H "Api: $API_HEADER" \
+                -H "User-Agent: $UA_HEADER" \
+                -H "Authorization: Bearer $TOKEN" \
+                -H "Instance: $TGS_INSTANCE_ID" 2>/dev/null) || return 1
+              local stopped_at exception_details error_code cancelled
+              stopped_at=$(printf '%s' "$body" | jq -r '.stoppedAt // empty')
+              if [ -z "$stopped_at" ]; then
+                sleep 5
+                continue
+              fi
+              exception_details=$(printf '%s' "$body" | jq -r '.exceptionDetails // empty')
+              error_code=$(printf '%s' "$body" | jq -r '.errorCode // empty')
+              cancelled=$(printf '%s' "$body" | jq -r '.cancelled // false')
+              if [ -n "$exception_details" ] || [ -n "$error_code" ] || [ "$cancelled" = "true" ]; then
+                echo "::error::$label job $job_id ended in failure."
+                echo "  errorCode: ${error_code:-<none>}"
+                echo "  cancelled: $cancelled"
+                echo "  exceptionDetails (first 2000 chars):"
+                printf '%s' "$exception_details" | head -c 2000
+                echo
+                return 1
+              fi
+              echo "$label job $job_id completed successfully."
+              return 0
+            done
+          }
+
           # Step 2: tell the instance to pull the new master. POST /api/Repository
           # with updateFromOrigin: true is the API equivalent of clicking
           # "Reset repository to remote tracked reference" on the panel.
@@ -157,6 +210,15 @@ jobs:
           JOB_ID=$(printf '%s' "$UPDATE_RESP" | jq -r '.activeJob.id // empty')
           echo "Repo update queued. Job id: ${JOB_ID:-<none returned>}"
 
+          # Wait for the repo-update job to actually complete. Failure here
+          # is usually a merge conflict between origin/master and an active
+          # testmerge — fail the workflow before we attempt to compile against
+          # the unchanged state.
+          if ! wait_for_job "REPOSITORY UPDATE" "$JOB_ID" 120; then
+            echo "::error::Repository update job failed. The compile step will not run. Check the TGS panel: a stale testmerge entry, an active job collision, or auth scope is the usual cause."
+            exit 1
+          fi
+
           # Step 3: trigger a deployment explicitly. Doing this as its own call
           # removes the dependency on the instance's "Compile & Deploy after
           # changes" toggle being set in the panel - the workflow always queues
@@ -176,3 +238,15 @@ jobs:
           fi
           DEPLOY_JOB=$(printf '%s' "$DEPLOY_RESP" | jq -r '.id // empty')
           echo "Deploy queued. Job id: ${DEPLOY_JOB:-<none returned>}"
+
+          # Wait for the compile to actually finish. Failure here is typically
+          # a DM syntax error introduced by the merge that produced this push,
+          # or a regression in a generated artifact (rust_g binary, tgui
+          # bundle). The exceptionDetails from TGS contains the exact compiler
+          # error, which we surface so the GitHub Actions failure summary
+          # tells you what to fix without having to dig through TGS logs.
+          if ! wait_for_job "DEPLOY" "$DEPLOY_JOB" 600; then
+            echo "::error::DreamMaker compile job failed. Check the exceptionDetails above for the exact compiler error."
+            exit 1
+          fi
+          echo "Auto-deploy succeeded. Master now compiled and queued for the next round restart."
