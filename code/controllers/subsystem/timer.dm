@@ -146,8 +146,9 @@ SUBSYSTEM_DEF(timer)
 				timer.spent = world.time
 				// AUDIT: log every callback invocation for chem_grenade and airlock
 				// so we can see which timers fire and which silently get skipped.
-				// Remove this block once Bug A / Bug F are rooted.
-				var/cb_obj = callBack.object
+				// Remove this block once Bug A / Bug F are rooted. Typed
+				// /datum so the `.type` accessor compiles under DM strict mode.
+				var/datum/cb_obj = callBack.object
 				if (cb_obj && (istype(cb_obj, /obj/item/grenade) || istype(cb_obj, /obj/machinery/door/airlock)))
 					log_game("AUDIT SSTimer/fire: invoking callback on [cb_obj]([cb_obj.type]) proc=[callBack.delegate] bucket=[practical_offset] timer.timeToRun=[timer.timeToRun] world.time=[world.time]")
 				callBack.InvokeAsync()
