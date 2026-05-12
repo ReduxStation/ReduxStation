@@ -55,9 +55,18 @@
 
 //Called when another assembly acts on this one, var/radio will determine where it came from for wire calcs
 /obj/item/assembly/proc/pulsed(radio = FALSE)
+	// AUDIT-DISPATCH: button activation funnels through here. If pulsed fires
+	// but neither activate audit (base nor override) appears, INVOKE_ASYNC
+	// failed to reach activate. Bug B diagnostic.
+	if(istype(src, /obj/item/assembly/control))
+		log_game("AUDIT assembly/pulsed FIRED: src=[src] type=[type] wire_type=[wire_type] WIRE_RECEIVE_bit=[!!(wire_type & WIRE_RECEIVE)] WIRE_RADIO_RECEIVE_bit=[!!(wire_type & WIRE_RADIO_RECEIVE)] radio=[radio]")
 	if(wire_type & WIRE_RECEIVE)
+		if(istype(src, /obj/item/assembly/control))
+			log_game("AUDIT assembly/pulsed: WIRE_RECEIVE branch - calling INVOKE_ASYNC(src, .proc/activate)")
 		INVOKE_ASYNC(src, .proc/activate)
 	if(radio && (wire_type & WIRE_RADIO_RECEIVE))
+		if(istype(src, /obj/item/assembly/control))
+			log_game("AUDIT assembly/pulsed: WIRE_RADIO_RECEIVE branch - calling INVOKE_ASYNC(src, .proc/activate)")
 		INVOKE_ASYNC(src, .proc/activate)
 	return TRUE
 
@@ -76,6 +85,13 @@
 
 // What the device does when turned on
 /obj/item/assembly/proc/activate()
+	// AUDIT-DISPATCH: this base body only sets next_activate and returns. If
+	// this fires for an /obj/item/assembly/control subtype, dispatch went to
+	// the base instead of the door-opening override - Bug B is rooted as a
+	// dispatch problem. If this does NOT fire for a control instance but the
+	// control override DOES fire, dispatch is fine.
+	if(istype(src, /obj/item/assembly/control))
+		log_game("AUDIT BASE assembly/activate FIRED on control subtype: src=[src] type=[type] next_activate=[next_activate] secured=[secured]")
 	if(QDELETED(src) || !secured || (next_activate > world.time))
 		return FALSE
 	next_activate = world.time + 30

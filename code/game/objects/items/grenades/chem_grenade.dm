@@ -224,6 +224,10 @@
 	log_game("AUDIT chem_grenade/preprime: src=[src] timer queued for prime() in [audit_delay] deciseconds")
 
 /obj/item/grenade/chem_grenade/prime()
+	// AUDIT-DISPATCH: first line, no var-decl prerequisite. If this fires we know
+	// dispatch reached the override. If only "AUDIT BASE grenade/prime" fires for
+	// the same grenade, dispatch is static (Bug F root).
+	log_game("AUDIT OVERRIDE chem_grenade/prime FIRED: src=[src] type=[type] gc_destroyed=[gc_destroyed]")
 	var/audit_beakers = beakers ? beakers.len : 0
 	log_game("AUDIT chem_grenade/prime: src=[src] type=[type] stage=[stage] beakers=[audit_beakers] active=[active]")
 	if(stage != GRENADE_READY)

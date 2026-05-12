@@ -85,6 +85,11 @@
 	log_game("AUDIT grenade/preprime: src=[src] timer queued for prime() in [audit_delay] deciseconds")
 
 /obj/item/grenade/proc/prime()
+	// AUDIT-DISPATCH: this base body is empty - if it fires for a chem_grenade
+	// or any subclass that overrides prime(), the callback dispatched STATICALLY
+	// to the base proctype instead of the subclass override, and we have rooted
+	// Bug F. Remove once Bug F is rooted.
+	log_game("AUDIT BASE grenade/prime FIRED: src=[src] type=[type] gc_destroyed=[gc_destroyed]")
 
 /obj/item/grenade/proc/update_mob()
 	if(ismob(loc))
