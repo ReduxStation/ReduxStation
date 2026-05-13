@@ -143,13 +143,26 @@ find "$PERSIST/logs" -maxdepth 1 -type f -name 'config_error.{*}.log' -delete 2>
 # master takes effect on the next deploy automatically (with a one-deploy lag
 # for PostCompile itself, since the currently running PostCompile installs the
 # new one).
+#
+# ATOMIC REPLACE (not in-place truncate) is critical here. The running PostCompile
+# script IS this file. Plain `cp -f $SRC $EVENT_DST/$SCRIPT.sh` opens the dest
+# with O_TRUNC and rewrites bytes in place — same inode. If the new script is
+# shorter than the running one, bash (which reads the file lazily, not all at
+# once) hits EOF mid-execution and dies with "unexpected EOF while looking for
+# matching <char>" wherever the parser was. The deploy fails and the next deploy
+# inherits a corrupted installed script.
+#
+# Same fix shape as the lib scatter above: write to a sibling tempfile, then
+# atomic-mv. The running bash process keeps the old inode open and finishes
+# cleanly; the new file is in place for the next deploy.
 EVENT_DST="$(dirname "$(dirname "$GAME_DIR")")/Configuration/EventScripts"
 if [ -d "$EVENT_DST" ]; then
     for SCRIPT in PostCompile DreamDaemonPreLaunch RoundStart RoundEnd; do
         SRC="$GAME_DIR/tools/tgs4_scripts/$SCRIPT.sh"
         if [ -f "$SRC" ]; then
-            cp -f "$SRC" "$EVENT_DST/$SCRIPT.sh"
-            chmod +x "$EVENT_DST/$SCRIPT.sh"
+            cp -f "$SRC" "$EVENT_DST/$SCRIPT.sh.tmp.$$"
+            chmod +x "$EVENT_DST/$SCRIPT.sh.tmp.$$"
+            mv -f "$EVENT_DST/$SCRIPT.sh.tmp.$$" "$EVENT_DST/$SCRIPT.sh"
         fi
     done
 fi
