@@ -138,9 +138,15 @@ SUBSYSTEM_DEF(dbcore)
 	query_round_last_id.Execute(async = FALSE)
 	if(query_round_last_id.NextRow(async = FALSE))
 		GLOB.round_id = query_round_last_id.item[1]
-		// Notify TGS that a new round just started so the public log parser
-		// can hide this round's directory until SetRoundEnd fires.
-		world.TgsTriggerEvent("RoundStart", list("[GLOB.round_id]"))
+		// Write the public-log-parser's "ongoing round" file directly. Previously
+		// this fired world.TgsTriggerEvent("RoundStart", ...) which TGS routed to
+		// a RoundStart.sh event script that did this same write. Eliminating the
+		// shell hop means one fewer event-script file to maintain and matches the
+		// upstream tgstation deployment model (no custom event scripts).
+		// data/ is a symlink to /tgstation/data set up by PreCompile.sh, so this
+		// lands at the same path Caddy serves at logs.owo.fm/serverinfo.json.
+		fdel("data/serverinfo.json")
+		text2file("{\"servers\":[{\"data\":{\"round_id\":\"[GLOB.round_id]\",\"identifier\":\"owo\"}}]}", "data/serverinfo.json")
 	qdel(query_round_last_id)
 
 /datum/controller/subsystem/dbcore/proc/SetRoundStart()
@@ -154,7 +160,7 @@ SUBSYSTEM_DEF(dbcore)
 	// Idempotent: declare_completion -> Reboot_Helper calls this for natural
 	// round ends, and world.Reboot calls it as a fallback for admin-reboot
 	// and any other path that bypasses Reboot_Helper. The flag stops the
-	// SQL UPDATE and the TGS event from firing twice when both paths run.
+	// SQL UPDATE and the file write from firing twice when both paths run.
 	if(round_end_recorded)
 		return
 	if(!Connect())
@@ -164,10 +170,13 @@ SUBSYSTEM_DEF(dbcore)
 	query_round_end.Execute()
 	qdel(query_round_end)
 	round_end_recorded = TRUE
-	// Notify TGS that the current round has finished so the public log
-	// parser stops hiding it.
+	// Clear the public-log-parser's "ongoing round" file so it stops hiding
+	// this round's directory at logs.owo.fm. Previously this fired
+	// world.TgsTriggerEvent("RoundEnd", ...) which routed to RoundEnd.sh; we
+	// do the file write directly now, same shell-less reasoning as SetRoundID.
 	if(GLOB.round_id)
-		world.TgsTriggerEvent("RoundEnd", list("[GLOB.round_id]"))
+		fdel("data/serverinfo.json")
+		text2file("{\"servers\":[]}", "data/serverinfo.json")
 
 /datum/controller/subsystem/dbcore/proc/Disconnect()
 	failed_connections = 0
