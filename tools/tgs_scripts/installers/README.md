@@ -44,25 +44,24 @@ linked into the game directory automatically: `Configuration/GameStaticFiles/`.
 Anything placed under that directory is hard-linked into the deployed game
 directory on every deploy.
 
-For our setup, we want `data/` (player_saves, spritesheets, logs, etc.) to
-persist. So the operator does one of:
+For our setup, the persistent `game_data` volume is mounted **directly at the
+TGS GameStaticFiles path** in the TGS container — see `docker-compose.yml`:
 
-A. **Symlink the existing volume** (no docker-compose change):
-```bash
-# Inside the TGS container (one-time):
-ln -s /tgstation/data /tgs_instances/ResurgenceStation/Configuration/GameStaticFiles/data
-```
-
-B. **Re-mount the volume at the TGS path** (docker-compose change):
 ```yaml
-# In docker-compose.yml, change the tgs service's data mount from
-#   - resurgencestation_game_data:/tgstation/data
-# to
-#   - resurgencestation_game_data:/tgs_instances/ResurgenceStation/Configuration/GameStaticFiles/data
+- game_data:/tgs_instances/ResurgenceStation/Configuration/GameStaticFiles/data
 ```
 
-After either A or B, TGS automatically links `Game/Live/data` → that directory
-on every deploy. No PreCompile/PostCompile/DreamDaemonPreLaunch script needed.
+This is the upstream tgstation `RUNNING_A_SERVER.md` setup:
+
+> "We have two directories which should be setup in the instance's
+> Configuration/GameStaticFiles directory: config ... data should be initially
+> created as an empty directory. The game stores persistent data here."
+
+No symlink, no PreCompile/PostCompile/DreamDaemonPreLaunch script. TGS sees
+`Configuration/GameStaticFiles/data/`, hard-links its contents into
+`Game/Live/data/` on every deploy automatically. The game writes to
+`data/foo` (relative to its CWD = `Game/Live/`), which resolves through the
+hard link back to the persistent volume.
 
 ## Native libraries
 
