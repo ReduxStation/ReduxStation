@@ -218,7 +218,8 @@
 		log_game("[antag_name]s :[L.Join(", ")].")
 
 	CHECK_TICK
-	SSdbcore.SetRoundEnd()
+	SSdbcore.SetRoundEnd()  // DB-only: writes end_datetime
+	SSticker.TriggerRoundEndTgsEvent()  // fires TGS event so the log-parser unhides the round
 	//Collects persistence features
 	if(mode.allow_persistence_save)
 		SSpersistence.CollectData()
