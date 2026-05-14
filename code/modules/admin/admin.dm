@@ -480,24 +480,57 @@
 			var/init_by = "Initiated by [usr.client.holder.fakekey ? "Admin" : usr.key]."
 			switch(result)
 				if("Regular Restart")
-					// Fire the TGS RoundEnd event BEFORE the reboot countdown
-					// starts. This matches upstream tgstation's admin verb
-					// pattern (code/modules/admin/verbs/server.dm). Doing it
-					// here, not from inside SSticker.Reboot or world.Reboot,
-					// keeps the TGS event well-separated from the eventual
-					// TgsReboot call inside world.Reboot. Two back-to-back
-					// TGS interactions inside the same world.Reboot tick is
-					// what was racing TGS's port-swap and killing the
-					// DreamSeeker client reconnect redirect.
+					// 1. Record end_datetime / game_mode_result / station_name
+					//    in SS13_round. SetRoundEnd is DB-only (no TGS event
+					//    inside it), so this is safe to call here while DB
+					//    is still up and well before the reboot is queued.
+					//    Idempotent if declare_completion already ran.
+					if(GLOB.round_id && SSdbcore && SSdbcore.IsConnected())
+						SSdbcore.SetRoundEnd()
+					// 2. Fire the TGS RoundEnd event SYNCHRONOUSLY so the
+					//    log-parser unhides the round. TriggerRoundEndTgsEvent
+					//    blocks (wait_for_completion = TRUE inside) until the
+					//    EventScripts/RoundEnd.sh script has fully run. By
+					//    the time it returns, the EVENT bridge is fully done
+					//    and TGS is idle.
 					SSticker.TriggerRoundEndTgsEvent()
+					// 3. Start the countdown. SSticker.Reboot uses SSTimer's
+					//    addtimer + reboot_callback (added in PR for reboot
+					//    pipeline rewrite), so the actual world.Reboot fires
+					//    from a fresh SSTimer stack after the delay. By that
+					//    point this verb's stack has fully unwound, no
+					//    stale bridge state is in flight, and the only TGS
+					//    Bridge call left is TgsReboot's REBOOT command --
+					//    which gets a clean response and calls
+					//    world.OpenPort, triggering BYOND's native
+					//    fade-to-title and client reconnect.
 					SSticker.Reboot(init_by, "admin reboot - by [usr.key] [usr.client.holder.fakekey ? "(stealth)" : ""]", 10)
 				if("Hard Restart (No Delay, No Feeback Reason)")
+					// Hard Restart deliberately SKIPS the TGS RoundEnd event
+					// (matches upstream's HARD_RESTART branch). We still
+					// want the DB row recorded though, so SetRoundEnd
+					// happens before world.Reboot. No TGS event means no
+					// Bridge race with the subsequent TgsReboot inside
+					// world.Reboot.
+					if(GLOB.round_id && SSdbcore && SSdbcore.IsConnected())
+						SSdbcore.SetRoundEnd()
 					to_chat(world, "World reboot - [init_by]")
 					world.Reboot()
 				if("Hardest Restart (No actions, just reboot)")
+					// fast_track=TRUE skips Master.Shutdown inside
+					// world.Reboot. SetRoundEnd still happens here first
+					// since DB is still healthy at this point.
+					if(GLOB.round_id && SSdbcore && SSdbcore.IsConnected())
+						SSdbcore.SetRoundEnd()
 					to_chat(world, "Hard world reboot - [init_by]")
 					world.Reboot(fast_track = TRUE)
 				if("Server Restart (Kill and restart DD)")
+					// TgsEndProcess SIGKILLs DD; no DM cleanup possible
+					// after this returns. We still try to record the
+					// end_datetime first (best-effort, in case the SQL
+					// query finishes before the kill).
+					if(GLOB.round_id && SSdbcore && SSdbcore.IsConnected())
+						SSdbcore.SetRoundEnd()
 					to_chat(world, "Server restart - [init_by]")
 					world.TgsEndProcess()
 
