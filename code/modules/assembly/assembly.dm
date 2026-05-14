@@ -62,12 +62,16 @@
 		log_game("AUDIT assembly/pulsed FIRED: src=[src] type=[type] wire_type=[wire_type] WIRE_RECEIVE_bit=[!!(wire_type & WIRE_RECEIVE)] WIRE_RADIO_RECEIVE_bit=[!!(wire_type & WIRE_RADIO_RECEIVE)] radio=[radio]")
 	if(wire_type & WIRE_RECEIVE)
 		if(istype(src, /obj/item/assembly/control))
-			log_game("AUDIT assembly/pulsed: WIRE_RECEIVE branch - calling INVOKE_ASYNC(src, .proc/activate)")
-		INVOKE_ASYNC(src, .proc/activate)
+			log_game("AUDIT assembly/pulsed: WIRE_RECEIVE branch - calling INVOKE_ASYNC(src, PROC_REF(activate))")
+		// BYOND 516 dispatch fix: PROC_REF(activate) routes via dynamic dispatch
+		// and reaches the /obj/item/assembly/control override that iterates
+		// GLOB.machines to open the linked doors. With the old .proc/activate
+		// form, the base assembly/activate ran (a no-op for door buttons). Bug B fix.
+		INVOKE_ASYNC(src, PROC_REF(activate))
 	if(radio && (wire_type & WIRE_RADIO_RECEIVE))
 		if(istype(src, /obj/item/assembly/control))
-			log_game("AUDIT assembly/pulsed: WIRE_RADIO_RECEIVE branch - calling INVOKE_ASYNC(src, .proc/activate)")
-		INVOKE_ASYNC(src, .proc/activate)
+			log_game("AUDIT assembly/pulsed: WIRE_RADIO_RECEIVE branch - calling INVOKE_ASYNC(src, PROC_REF(activate))")
+		INVOKE_ASYNC(src, PROC_REF(activate))
 	return TRUE
 
 

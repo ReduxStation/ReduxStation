@@ -340,8 +340,13 @@
 				log_game("AUDIT airlock cycle: linked operating=TRUE, setting delayed_close_requested (NOT queuing timer)")
 				cyclelinkedairlock.delayed_close_requested = TRUE
 			else
-				log_game("AUDIT airlock cycle: queuing addtimer CALLBACK(linked, .proc/close) in 2 ticks - linked.operating=FALSE")
-				addtimer(CALLBACK(cyclelinkedairlock, .proc/close), 2)
+				log_game("AUDIT airlock cycle: queuing addtimer CALLBACK(linked, PROC_REF(close)) in 2 ticks - linked.operating=FALSE")
+				// BYOND 516 dispatch fix: PROC_REF(close) goes through dynamic
+				// dispatch and reaches the airlock override (which sets the
+				// AIRLOCK_CLOSING / AIRLOCK_CLOSED sprite states). With the old
+				// .proc/close form, the base door/close ran and the door
+				// physically closed without animating. Bug A fix.
+				addtimer(CALLBACK(cyclelinkedairlock, PROC_REF(close)), 2)
 	..()
 
 /obj/machinery/door/airlock/proc/isElectrified()
