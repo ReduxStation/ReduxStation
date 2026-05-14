@@ -480,16 +480,6 @@
 			var/init_by = "Initiated by [usr.client.holder.fakekey ? "Admin" : usr.key]."
 			switch(result)
 				if("Regular Restart")
-					// Fire the TGS RoundEnd event BEFORE the reboot countdown
-					// starts. This matches upstream tgstation's admin verb
-					// pattern (code/modules/admin/verbs/server.dm). Doing it
-					// here, not from inside SSticker.Reboot or world.Reboot,
-					// keeps the TGS event well-separated from the eventual
-					// TgsReboot call inside world.Reboot. Two back-to-back
-					// TGS interactions inside the same world.Reboot tick is
-					// what was racing TGS's port-swap and killing the
-					// DreamSeeker client reconnect redirect.
-					SSticker.TriggerRoundEndTgsEvent()
 					SSticker.Reboot(init_by, "admin reboot - by [usr.key] [usr.client.holder.fakekey ? "(stealth)" : ""]", 10)
 				if("Hard Restart (No Delay, No Feeback Reason)")
 					to_chat(world, "World reboot - [init_by]")
