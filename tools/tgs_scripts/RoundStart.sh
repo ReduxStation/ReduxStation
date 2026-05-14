@@ -13,17 +13,27 @@
 # where <game_dir> is the active game directory (TGS prepends it) and the
 # rest are the parameters from `world.TgsTriggerEvent("RoundStart", list(...))`.
 # DMAPI call: world.TgsTriggerEvent("RoundStart", list("[GLOB.round_id]")) so:
-#   $1 = game directory (unused here)
+#   $1 = game directory (Game/Live)
 #   $2 = round_id as a string
+#
+# $1/data/ resolves through TGS-6's GameStaticFiles hard-link back to the
+# persistent volume mounted at Configuration/GameStaticFiles/data. Caddy
+# reads the same volume from /srv/logs and serves serverinfo.json to the
+# public-log-parser.
 set -euo pipefail
 
+GAME_DIR="${1:-}"
 ROUND_ID="${2:-}"
+if [ -z "$GAME_DIR" ]; then
+  echo "RoundStart: no game dir passed in arg 1, doing nothing" >&2
+  exit 0
+fi
 if [ -z "$ROUND_ID" ]; then
   echo "RoundStart: no round_id passed in arg 2, doing nothing" >&2
   exit 0
 fi
 
-OUT=/tgstation/data/serverinfo.json
+OUT="$GAME_DIR/data/serverinfo.json"
 mkdir -p "$(dirname "$OUT")"
 cat > "$OUT" <<JSON
 {"servers":[{"data":{"round_id":"${ROUND_ID}","identifier":"owo"}}]}

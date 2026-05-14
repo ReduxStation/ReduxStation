@@ -66,36 +66,25 @@ jobs:
           echo "PATH=$PATH" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
-      - name: Scatter native binaries
-        # Mirrors the runtime stage of the Dockerfile exactly.
-        # rust_g, libBSQL.so, libquickwrite.so are committed to the repo root —
-        # no downloads needed. Scatter them to every path dlopen("rust_g") etc.
-        # might search: BYOND's own bin dir, standard lib paths, and the game dir.
+      - name: Place native binaries for CI test run
+        # librust_g.so, libBSQL.so, libquickwrite.so are committed to the repo root
+        # under standard dlopen names. In production, TGS-6 launches DD with
+        # LD_LIBRARY_PATH including the game directory so the libs are found there.
+        # The CI runner does not have its CWD set up that way, so we copy the libs
+        # to standard lib search paths (BYOND bin + ldconfig dirs) for the test
+        # process to find them via dlopen.
         run: |
           BYOND_BIN="$HOME/BYOND/byond/bin"
           GAME_DIR="$GITHUB_WORKSPACE"
 
-          # rust_g — dlopen("rust_g") searches LD_LIBRARY_PATH first
-          cp "$GAME_DIR/rust_g" "$BYOND_BIN/rust_g"
-          cp "$GAME_DIR/rust_g" "$BYOND_BIN/rust_g.so"
-          cp "$GAME_DIR/rust_g" "$BYOND_BIN/librust_g.so"
-          cp "$GAME_DIR/rust_g" "$GAME_DIR/rust_g.so"
-          cp "$GAME_DIR/rust_g" "$GAME_DIR/librust_g.so"
-          cp "$GAME_DIR/rust_g" /usr/lib/i386-linux-gnu/rust_g.so
-          cp "$GAME_DIR/rust_g" /usr/lib/i386-linux-gnu/librust_g.so
-          cp "$GAME_DIR/rust_g" /usr/local/lib/rust_g.so
-          cp "$GAME_DIR/rust_g" /usr/local/lib/librust_g.so
+          cp "$GAME_DIR/librust_g.so" "$BYOND_BIN/librust_g.so"
+          cp "$GAME_DIR/librust_g.so" /usr/lib/i386-linux-gnu/librust_g.so
+          cp "$GAME_DIR/librust_g.so" /usr/local/lib/librust_g.so
 
-          # libBSQL.so — all filename variants BYOND might try
           cp "$GAME_DIR/libBSQL.so" "$BYOND_BIN/libBSQL.so"
-          cp "$GAME_DIR/libBSQL.so" "$BYOND_BIN/BSQL.so"
-          cp "$GAME_DIR/libBSQL.so" "$BYOND_BIN/BSQL"
-          cp "$GAME_DIR/libBSQL.so" "$GAME_DIR/BSQL.so"
-          cp "$GAME_DIR/libBSQL.so" "$GAME_DIR/BSQL"
           cp "$GAME_DIR/libBSQL.so" /usr/lib/i386-linux-gnu/libBSQL.so
           cp "$GAME_DIR/libBSQL.so" /usr/local/lib/libBSQL.so
 
-          # libquickwrite.so
           cp "$GAME_DIR/libquickwrite.so" "$BYOND_BIN/libquickwrite.so"
           cp "$GAME_DIR/libquickwrite.so" /usr/lib/i386-linux-gnu/libquickwrite.so
           cp "$GAME_DIR/libquickwrite.so" /usr/local/lib/libquickwrite.so
