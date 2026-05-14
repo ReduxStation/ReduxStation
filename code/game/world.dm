@@ -226,32 +226,26 @@ GLOBAL_VAR_INIT(tgs_initialized, FALSE)
 	qdel(src)	//shut it down
 
 /world/Reboot(reason = 0, fast_track = FALSE)
-	// NO SetRoundEnd or TGS-event call here. Matches upstream tgstation's
-	// /world/Reboot exactly. Reason: a DB UPDATE here adds wall-clock
-	// latency between Master.Shutdown and TgsReboot's Bridge(REBOOT) call,
-	// and a TGS event here would race the imminent Bridge(REBOOT). Either
-	// can cause TGS's response to TgsReboot to be malformed or delayed,
-	// preventing world.OpenPort(new_port) from firing -- and that
-	// OpenPort call is the ONLY thing that makes BYOND clients fade to
-	// title and reconnect.
+	// Record the round's end_datetime + game_mode_result + station_name in
+	// the DB before any reboot path can bypass that work. Natural round end
+	// (declare_completion in code/__HELPERS/roundend.dm) already calls
+	// SSdbcore.SetRoundEnd before reaching us, but admin "Reboot World",
+	// fast_track restarts, and any other code that calls world.Reboot
+	// directly used to skip it. SetRoundEnd is idempotent (flag-guarded)
+	// so the natural-path-then-here case still only writes once.
 	//
-	// All call sites that hit this proc MUST record end_datetime
-	// themselves BEFORE calling world.Reboot, while there is still real
-	// time before the timing-sensitive reboot path:
-	//   * Natural end: declare_completion -> SSdbcore.SetRoundEnd ->
-	//     SSticker.TriggerRoundEndTgsEvent -> sleep(5s) -> standard_reboot
-	//     -> SSticker.Reboot -> reboot_callback (SSTimer) -> world.Reboot.
-	//   * Admin "Regular Restart" verb (admin.dm): SetRoundEnd ->
-	//     TriggerRoundEndTgsEvent -> SSticker.Reboot -> reboot_callback
-	//     -> world.Reboot.
-	//   * Admin "Hard Restart" / "Hardest Restart" verbs (admin.dm):
-	//     SetRoundEnd -> world.Reboot (no TGS event; deliberate, these
-	//     are emergency options that intentionally skip event firing).
-	//   * Vote restart (vote.dm / hippiestation/vote.dm): SetRoundEnd ->
-	//     TriggerRoundEndTgsEvent -> SSticker.Reboot -> reboot_callback
-	//     -> world.Reboot.
-	//   * Admin "Server Restart" (world.TgsEndProcess): cannot record
-	//     end_datetime because DD is SIGKILLed -- this is intentional.
+	// Critical: SetRoundEnd ONLY writes the DB row. It does NOT fire
+	// world.TgsTriggerEvent("RoundEnd"). That event lives in its own proc
+	// (SSticker.TriggerRoundEndTgsEvent) and is called explicitly by the
+	// natural-end path (declare_completion) and by the admin "Regular
+	// Restart" verb BEFORE SSticker.Reboot starts its countdown. This
+	// matches upstream tgstation's split. Keeping the TGS event out of
+	// the world.Reboot proc prevents the back-to-back TgsTriggerEvent +
+	// TgsReboot race that broke the BYOND client-reconnect redirect on
+	// admin reboots (PR #81 dropped the call entirely as a stop-gap; this
+	// PR brings the DB write back behind the proper split).
+	if(GLOB.round_id && SSdbcore && SSdbcore.IsConnected())
+		SSdbcore.SetRoundEnd()
 
 	if (reason || fast_track) //special reboot, do none of the normal stuff
 		if (usr)
