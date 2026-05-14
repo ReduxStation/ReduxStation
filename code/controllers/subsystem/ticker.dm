@@ -596,18 +596,40 @@ SUBSYSTEM_DEF(ticker)
 	round_end_sound_sent = TRUE
 
 /datum/controller/subsystem/ticker/proc/TriggerRoundEndTgsEvent()
-	// Fires the TGS RoundEnd event so the public-log-parser stops hiding
-	// the round's directory at logs.owo.fm. Lives in its own proc so call
-	// sites can fire it at safe times: natural round end fires it from
-	// declare_completion in __HELPERS/roundend.dm, admin "Regular Restart"
-	// fires it from the verb in admin.dm BEFORE SSticker.Reboot's
-	// countdown starts. Keeping this OUT of world.Reboot is what prevents
-	// the TgsTriggerEvent + TgsReboot race that broke the BYOND
-	// client-reconnect redirect on admin reboots. Matches upstream
-	// tgstation's split (code/__HELPERS/roundend.dm TriggerRoundEndTgsEvent).
-	set waitfor = FALSE
+	// Fires the TGS RoundEnd event SYNCHRONOUSLY. Callers (declare_completion
+	// in __HELPERS/roundend.dm, the admin "Regular Restart" verb in
+	// admin.dm, and the vote-restart path in vote.dm) block here until TGS
+	// has fully processed the event and the EventScripts/RoundEnd.sh script
+	// has finished. Only then do they proceed to SSticker.Reboot and
+	// world.Reboot.
+	//
+	// Two critical reasons this must be synchronous (and matches upstream
+	// tgstation's TriggerRoundEndTgsEvent verbatim, see upstream
+	// code/__HELPERS/roundend.dm:301):
+	//
+	// 1. `wait_for_completion = TRUE` makes DMAPI's TgsTriggerEvent BLOCK
+	//    on the TGS event handler script. Without this, the script runs in
+	//    parallel with the upcoming world.Reboot. The script does an HTTP
+	//    Bridge call to TGS, and TgsReboot() inside world.Reboot ALSO does
+	//    an HTTP Bridge call. Two concurrent Bridge calls against TGS race
+	//    each other and TGS ends up in a state where its native
+	//    "fade-to-title + reconnect" signal from world.Reboot's ..() never
+	//    reaches connected clients. They sit forever waiting to be told
+	//    where to reconnect.
+	//
+	// 2. NO `set waitfor = FALSE` here. If we make this proc non-blocking,
+	//    the caller (admin verb) returns immediately and starts the reboot
+	//    countdown before the TGS event has even finished firing. Same
+	//    Bridge-vs-Bridge race shape.
+	//
+	// Pre-condition for non-pathological behavior: the TGS instance must
+	// have at least one chat channel registered. WaitForReattach(TRUE)
+	// (called by TriggerEvent in code/modules/tgs/v5/api.dm:265) blocks up
+	// to 60 seconds when chat_channels is empty, which would hang the verb
+	// for a minute. With any chat channel configured (Discord, IRC, even a
+	// placeholder), this returns in milliseconds.
 	if(GLOB.round_id)
-		world.TgsTriggerEvent("RoundEnd", list("[GLOB.round_id]"))
+		world.TgsTriggerEvent("RoundEnd", list("[GLOB.round_id]"), wait_for_completion = TRUE)
 
 /datum/controller/subsystem/ticker/proc/Reboot(reason, end_string, delay)
 	set waitfor = FALSE
