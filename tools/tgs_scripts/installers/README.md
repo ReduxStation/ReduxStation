@@ -65,12 +65,14 @@ hard link back to the persistent volume.
 
 ## Native libraries
 
-`rust_g`, `libBSQL.so`, and `libquickwrite.so` are committed to the repo root.
-Every TGS deploy puts them at `Game/Live/<name>` via the normal source-tree
-copy.
+`rust_g.so`, `libBSQL.so`, and `libquickwrite.so` are committed to the repo
+root. Every TGS deploy puts them at `Game/Live/<name>` via the normal
+source-tree copy.
 
-BYOND's `call_ext("rust_g", ...)` on Linux maps to `dlopen("rust_g")` with the
-literal name from the DM call. `dlopen` does NOT search the current working
+BYOND's `call_ext("rust_g", ...)` on Linux maps to `dlopen("rust_g.so")` —
+the literal call_ext name plus `.so`. Verified empirically by inspecting the
+live DreamDaemon's `/proc/<PID>/maps`, which shows the lib loaded from
+`.../rust_g.so` (not `rust_g` and not `librust_g.so`). `dlopen` does NOT search the current working
 directory; it searches `LD_LIBRARY_PATH` and the ldconfig cache. TGS-6
 launches DD via a wrapper script that does:
 

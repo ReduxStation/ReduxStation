@@ -92,17 +92,17 @@ jobs:
       - name: Compare with committed binary
         id: cmp
         run: |
-          if [ ! -f rust_g ]; then
-            echo "no committed rust_g, treating as differs"
+          if [ ! -f rust_g.so ]; then
+            echo "no committed rust_g.so, treating as differs"
             echo "differs=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if cmp -s rust_g rust_g.fresh; then
-            echo "committed rust_g matches fresh build, no commit needed"
+          if cmp -s rust_g.so rust_g.fresh; then
+            echo "committed rust_g.so matches fresh build, no commit needed"
             echo "differs=false" >> "$GITHUB_OUTPUT"
           else
-            echo "committed rust_g differs from fresh build"
-            echo "  committed: $(sha256sum rust_g | cut -d' ' -f1)"
+            echo "committed rust_g.so differs from fresh build"
+            echo "  committed: $(sha256sum rust_g.so | cut -d' ' -f1)"
             echo "  fresh:     $(sha256sum rust_g.fresh | cut -d' ' -f1)"
             echo "differs=true" >> "$GITHUB_OUTPUT"
           fi
@@ -111,18 +111,19 @@ jobs:
         if: steps.cmp.outputs.differs == 'true'
         run: |
           set -euo pipefail
-          mv rust_g.fresh rust_g
+          mv rust_g.fresh rust_g.so
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          # Defence in depth: if any stale variant filename slipped in (the
-          # previous draft of PR #80 renamed to `librust_g.so` for a bit),
-          # remove it before adding the canonical `rust_g`.
+          # Defence in depth: if any stale variant filename slipped in from
+          # earlier drafts of this refactor (`rust_g` without .so, or
+          # `librust_g.so`), sweep it before adding the canonical name.
+          git rm rust_g 2>/dev/null || true
           git rm librust_g.so 2>/dev/null || true
-          git add rust_g
+          git add rust_g.so
           # [ci skip] prevents the auto-commit from triggering another run of
           # this workflow. CI tests still run on the new commit because they
           # do not honor [ci skip].
-          git commit -m "Automatic rust_g rebuild from Dockerfile rust_g_builder stage [ci skip]"
+          git commit -m "Automatic rust_g.so rebuild from Dockerfile rust_g_builder stage [ci skip]"
           git push
 
       - name: Summary
