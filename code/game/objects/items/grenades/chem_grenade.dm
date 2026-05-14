@@ -210,7 +210,7 @@
 		landminemode.activate()
 		return
 	active = TRUE
-	addtimer(CALLBACK(src, .proc/prime), isnull(delayoverride)? det_time : delayoverride)
+	addtimer(CALLBACK(src, PROC_REF(prime)), isnull(delayoverride)? det_time : delayoverride)
 
 /obj/item/grenade/chem_grenade/prime()
 	if(stage != GRENADE_READY)

@@ -338,7 +338,7 @@
 			if(cyclelinkedairlock.operating)
 				cyclelinkedairlock.delayed_close_requested = TRUE
 			else
-				addtimer(CALLBACK(cyclelinkedairlock, .proc/close), 2)
+				addtimer(CALLBACK(cyclelinkedairlock, PROC_REF(close)), 2)
 	..()
 
 /obj/machinery/door/airlock/proc/isElectrified()
