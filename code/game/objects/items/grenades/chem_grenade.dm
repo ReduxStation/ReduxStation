@@ -220,7 +220,12 @@
 		landminemode.activate()
 		return
 	active = TRUE
-	addtimer(CALLBACK(src, .proc/prime), audit_delay)
+	// BYOND 516 dispatch fix: PROC_REF(prime) expands to nameof(.proc/prime),
+	// a string. call(src, "prime") is dynamic dispatch and reaches the
+	// chem_grenade override. `.proc/prime` would resolve to the base typepath
+	// /obj/item/grenade/proc/prime which BYOND 516 calls statically, so the
+	// override (which actually does the chem reactions) is skipped. Bug F fix.
+	addtimer(CALLBACK(src, PROC_REF(prime)), audit_delay)
 	log_game("AUDIT chem_grenade/preprime: src=[src] timer queued for prime() in [audit_delay] deciseconds")
 
 /obj/item/grenade/chem_grenade/prime()
