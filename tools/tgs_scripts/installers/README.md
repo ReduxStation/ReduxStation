@@ -65,14 +65,14 @@ hard link back to the persistent volume.
 
 ## Native libraries
 
-`librust_g.so`, `libBSQL.so`, and `libquickwrite.so` are committed to the repo
-root under their standard `dlopen` names. Every TGS deploy puts them at
-`Game/Live/<name>.so` via the normal source-tree copy.
+`rust_g`, `libBSQL.so`, and `libquickwrite.so` are committed to the repo root.
+Every TGS deploy puts them at `Game/Live/<name>` via the normal source-tree
+copy.
 
-BYOND on Linux does NOT search the current working directory for libraries
-(verified empirically by inspecting the live DreamDaemon's `/proc/<PID>/maps`).
-It searches `LD_LIBRARY_PATH` and the ldconfig cache. TGS-6 launches DD via a
-wrapper script that does:
+BYOND's `call_ext("rust_g", ...)` on Linux maps to `dlopen("rust_g")` with the
+literal name from the DM call. `dlopen` does NOT search the current working
+directory; it searches `LD_LIBRARY_PATH` and the ldconfig cache. TGS-6
+launches DD via a wrapper script that does:
 
 ```sh
 export LD_LIBRARY_PATH="$ORIGIN:$LD_LIBRARY_PATH"
@@ -87,9 +87,10 @@ environment:
   LD_LIBRARY_PATH: /tgs_instances/ResurgenceStation/Game/Live
 ```
 
-So DD's effective search path is `BYOND/bin/:Game/Live/`. BYOND finds the libs
-in `Game/Live/` via this path, no scatter script required. Every deploy
-refreshes the lib content automatically.
+So DD's effective search path is `BYOND/bin/:Game/Live/`. BYOND finds the
+literal `rust_g` file (along with `libBSQL.so` and `libquickwrite.so`) in
+`Game/Live/` via this path. No scatter script required. Every deploy refreshes
+the lib content automatically.
 
 A one-time cleanup on the live server removes any stale lib copies from
 `Byond/<version>/byond/bin/` left over from the old scatter; without this,

@@ -68,35 +68,30 @@ jobs:
 
       - name: Place native binaries for CI test run
         # In production TGS-6 launches DD with LD_LIBRARY_PATH that includes
-        # Game/Live, so BYOND finds librust_g.so there. The CI runner does not
-        # have that env setup. BYOND's call_ext("rust_g", ...) tries multiple
-        # filename variants (rust_g, rust_g.so, librust_g.so) — we copy the
-        # binary to every variant in every search path the runner can use.
+        # Game/Live, where the committed `rust_g` binary lives. BYOND on Linux
+        # calls dlopen() with the literal name passed to call_ext (i.e.
+        # "rust_g"), so the file is named exactly `rust_g` and gets found.
+        #
+        # The CI runner does not have that env setup, so we place the binary
+        # on BYOND's lib search paths (BYOND_BIN + ldconfig dirs) under the
+        # name BYOND requests.
         run: |
           BYOND_BIN="$HOME/BYOND/byond/bin"
           GAME_DIR="$GITHUB_WORKSPACE"
 
-          # librust_g.so — three filename variants per lib path
-          for dest in "$BYOND_BIN/rust_g" "$BYOND_BIN/rust_g.so" "$BYOND_BIN/librust_g.so" \
-                      "$GAME_DIR/rust_g" "$GAME_DIR/rust_g.so" \
-                      /usr/lib/i386-linux-gnu/rust_g.so /usr/lib/i386-linux-gnu/librust_g.so \
-                      /usr/local/lib/rust_g.so /usr/local/lib/librust_g.so; do
-              cp "$GAME_DIR/librust_g.so" "$dest"
-          done
+          cp "$GAME_DIR/rust_g" "$BYOND_BIN/rust_g"
+          cp "$GAME_DIR/rust_g" /usr/lib/i386-linux-gnu/rust_g
+          cp "$GAME_DIR/rust_g" /usr/local/lib/rust_g
 
-          # libBSQL.so — variants BYOND might try
-          for dest in "$BYOND_BIN/libBSQL.so" "$BYOND_BIN/BSQL.so" "$BYOND_BIN/BSQL" \
-                      "$GAME_DIR/BSQL.so" "$GAME_DIR/BSQL" \
-                      /usr/lib/i386-linux-gnu/libBSQL.so /usr/local/lib/libBSQL.so; do
-              cp "$GAME_DIR/libBSQL.so" "$dest"
-          done
+          cp "$GAME_DIR/libBSQL.so" "$BYOND_BIN/libBSQL.so"
+          cp "$GAME_DIR/libBSQL.so" "$BYOND_BIN/BSQL"
+          cp "$GAME_DIR/libBSQL.so" /usr/lib/i386-linux-gnu/libBSQL.so
+          cp "$GAME_DIR/libBSQL.so" /usr/local/lib/libBSQL.so
 
-          # libquickwrite.so
-          for dest in "$BYOND_BIN/libquickwrite.so" \
-                      /usr/lib/i386-linux-gnu/libquickwrite.so \
-                      /usr/local/lib/libquickwrite.so; do
-              cp "$GAME_DIR/libquickwrite.so" "$dest"
-          done
+          cp "$GAME_DIR/libquickwrite.so" "$BYOND_BIN/libquickwrite.so"
+          cp "$GAME_DIR/libquickwrite.so" "$BYOND_BIN/quickwrite"
+          cp "$GAME_DIR/libquickwrite.so" /usr/lib/i386-linux-gnu/libquickwrite.so
+          cp "$GAME_DIR/libquickwrite.so" /usr/local/lib/libquickwrite.so
 
           # MariaDB .so.2 compat symlink — BSQL was linked against libmariadb.so.2
           # on older systems; Debian 12 only ships .so.3
