@@ -226,28 +226,26 @@ GLOBAL_VAR_INIT(tgs_initialized, FALSE)
 	qdel(src)	//shut it down
 
 /world/Reboot(reason = 0, fast_track = FALSE)
-	// DO NOT call SSdbcore.SetRoundEnd() from here. It fires
-	// world.TgsTriggerEvent("RoundEnd", ...), which talks to TGS. A few
-	// lines below we also call TgsReboot() , that is the second TGS
-	// interaction in this same proc. On admin "Regular Restart" (the only
-	// non-natural path that exercises this) the two back-to-back TGS calls
-	// land within ~1 DD tick of each other and TGS is still mid-handling
-	// the RoundEnd event when the reboot command arrives. The race causes
-	// the port-swap / client-redirect that BYOND's native `..()` reboot
-	// depends on to drop, and DreamSeeker clients crash with no reconnect
-	// link. Natural round end (declare_completion -> SetRoundEnd ->
-	// SSticker.Reboot countdown -> world.Reboot) does not race because
-	// SetRoundEnd runs minutes before world.Reboot is even queued.
+	// Record the round's end_datetime + game_mode_result + station_name in
+	// the DB before any reboot path can bypass that work. Natural round end
+	// (declare_completion in code/__HELPERS/roundend.dm) already calls
+	// SSdbcore.SetRoundEnd before reaching us, but admin "Reboot World",
+	// fast_track restarts, and any other code that calls world.Reboot
+	// directly used to skip it. SetRoundEnd is idempotent (flag-guarded)
+	// so the natural-path-then-here case still only writes once.
 	//
-	// Trade-off: admin-rebooted rounds end with NULL end_datetime /
-	// game_mode_result in SS13_round (hidden from stats.owo.fm, log-parser
-	// keeps the round directory hidden until the next RoundStart fires
-	// and overwrites serverinfo.json). This matches upstream tgstation's
-	// behavior , they accept the NULL for admin reboots specifically to
-	// keep the client reconnect path clean. Followed-up by PR #46's
-	// canonical event-script wiring and the wrapper pattern; nothing here
-	// needs to change for stats hygiene because the next RoundStart event
-	// always supersedes the stale serverinfo.json within seconds.
+	// Critical: SetRoundEnd ONLY writes the DB row. It does NOT fire
+	// world.TgsTriggerEvent("RoundEnd"). That event lives in its own proc
+	// (SSticker.TriggerRoundEndTgsEvent) and is called explicitly by the
+	// natural-end path (declare_completion) and by the admin "Regular
+	// Restart" verb BEFORE SSticker.Reboot starts its countdown. This
+	// matches upstream tgstation's split. Keeping the TGS event out of
+	// the world.Reboot proc prevents the back-to-back TgsTriggerEvent +
+	// TgsReboot race that broke the BYOND client-reconnect redirect on
+	// admin reboots (PR #81 dropped the call entirely as a stop-gap; this
+	// PR brings the DB write back behind the proper split).
+	if(GLOB.round_id && SSdbcore && SSdbcore.IsConnected())
+		SSdbcore.SetRoundEnd()
 
 	if (reason || fast_track) //special reboot, do none of the normal stuff
 		if (usr)

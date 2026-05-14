@@ -151,10 +151,24 @@ SUBSYSTEM_DEF(dbcore)
 	qdel(query_round_start)
 
 /datum/controller/subsystem/dbcore/proc/SetRoundEnd()
-	// Idempotent: declare_completion -> Reboot_Helper calls this for natural
-	// round ends, and world.Reboot calls it as a fallback for admin-reboot
-	// and any other path that bypasses Reboot_Helper. The flag stops the
-	// SQL UPDATE and the TGS event from firing twice when both paths run.
+	// DB-only: writes end_datetime + game_mode_result + station_name to the
+	// SS13_round row. Does NOT fire the TGS RoundEnd event by design.
+	//
+	// Idempotent: declare_completion calls this for natural round ends, and
+	// world.Reboot calls it as a fallback for admin-reboot paths that
+	// bypass declare_completion. The flag stops the SQL UPDATE from
+	// running twice when both paths execute.
+	//
+	// The TGS RoundEnd event lives in its own proc
+	// (SSticker.TriggerRoundEndTgsEvent) and is fired BEFORE SSticker.Reboot
+	// kicks off its countdown, both on natural end (declare_completion)
+	// and on admin Regular Restart (the admin verb). Keeping the TGS event
+	// out of world.Reboot prevents the back-to-back TgsTriggerEvent +
+	// TgsReboot race that broke the BYOND client-reconnect redirect on
+	// admin reboots. Matches upstream tgstation's separation of concerns
+	// (upstream code/controllers/subsystem/dbcore.dm SetRoundEnd does only
+	// the DB write; the TGS event is in SSticker.TriggerRoundEndTgsEvent
+	// in upstream code/__HELPERS/roundend.dm).
 	if(round_end_recorded)
 		return
 	if(!Connect())
@@ -164,10 +178,6 @@ SUBSYSTEM_DEF(dbcore)
 	query_round_end.Execute()
 	qdel(query_round_end)
 	round_end_recorded = TRUE
-	// Notify TGS that the current round has finished so the public log
-	// parser stops hiding it.
-	if(GLOB.round_id)
-		world.TgsTriggerEvent("RoundEnd", list("[GLOB.round_id]"))
 
 /datum/controller/subsystem/dbcore/proc/Disconnect()
 	failed_connections = 0

@@ -595,6 +595,20 @@ SUBSYSTEM_DEF(ticker)
 		C.Export("##action=load_rsc", round_end_sound)
 	round_end_sound_sent = TRUE
 
+/datum/controller/subsystem/ticker/proc/TriggerRoundEndTgsEvent()
+	// Fires the TGS RoundEnd event so the public-log-parser stops hiding
+	// the round's directory at logs.owo.fm. Lives in its own proc so call
+	// sites can fire it at safe times: natural round end fires it from
+	// declare_completion in __HELPERS/roundend.dm, admin "Regular Restart"
+	// fires it from the verb in admin.dm BEFORE SSticker.Reboot's
+	// countdown starts. Keeping this OUT of world.Reboot is what prevents
+	// the TgsTriggerEvent + TgsReboot race that broke the BYOND
+	// client-reconnect redirect on admin reboots. Matches upstream
+	// tgstation's split (code/__HELPERS/roundend.dm TriggerRoundEndTgsEvent).
+	set waitfor = FALSE
+	if(GLOB.round_id)
+		world.TgsTriggerEvent("RoundEnd", list("[GLOB.round_id]"))
+
 /datum/controller/subsystem/ticker/proc/Reboot(reason, end_string, delay)
 	set waitfor = FALSE
 	if(usr && !check_rights(R_ADMIN, TRUE)) // hippie -- lets trialmins restart the server aswell
