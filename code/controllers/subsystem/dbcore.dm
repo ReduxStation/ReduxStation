@@ -151,23 +151,32 @@ SUBSYSTEM_DEF(dbcore)
 	qdel(query_round_start)
 
 /datum/controller/subsystem/dbcore/proc/SetRoundEnd()
-	// Idempotent: declare_completion -> Reboot_Helper calls this for natural
-	// round ends, and world.Reboot calls it as a fallback for admin-reboot
-	// and any other path that bypasses Reboot_Helper. The flag stops the
-	// SQL UPDATE and the TGS event from firing twice when both paths run.
+	// DB-only: writes end_datetime + game_mode_result + station_name to the
+	// SS13_round row. Does NOT fire the TGS RoundEnd event by design.
+	//
+	// Idempotent: declare_completion calls this for natural round ends, and
+	// admin restart verbs / vote restart call it before SSticker.Reboot as
+	// a fallback for paths that bypass declare_completion. The flag stops
+	// the SQL UPDATE from running twice when both paths execute.
+	//
+	// The TGS RoundEnd event lives in its own proc (SSticker.TriggerRoundEndTgsEvent)
+	// and is fired BEFORE SSticker.Reboot kicks off its countdown. Keeping
+	// the TGS event out of this proc prevents back-to-back TgsTriggerEvent
+	// + TgsReboot races that break the BYOND client-reconnect redirect on
+	// admin reboots. Matches upstream tgstation's separation of concerns.
+	log_world("REBOOT_AUDIT: SSdbcore.SetRoundEnd entry round_id=[GLOB.round_id] round_end_recorded=[round_end_recorded] world.time=[world.time]")
 	if(round_end_recorded)
+		log_world("REBOOT_AUDIT: SSdbcore.SetRoundEnd skipped - already recorded")
 		return
 	if(!Connect())
+		log_world("REBOOT_AUDIT: SSdbcore.SetRoundEnd skipped - DB not connected")
 		return
 	var/sql_station_name = sanitizeSQL(station_name())
 	var/datum/DBQuery/query_round_end = SSdbcore.NewQuery("UPDATE [format_table_name("round")] SET end_datetime = Now(), game_mode_result = '[sanitizeSQL(SSticker.mode_result)]', station_name = '[sql_station_name]' WHERE id = [GLOB.round_id]")
 	query_round_end.Execute()
 	qdel(query_round_end)
 	round_end_recorded = TRUE
-	// Notify TGS that the current round has finished so the public log
-	// parser stops hiding it.
-	if(GLOB.round_id)
-		world.TgsTriggerEvent("RoundEnd", list("[GLOB.round_id]"))
+	log_world("REBOOT_AUDIT: SSdbcore.SetRoundEnd done DB update committed world.time=[world.time]")
 
 /datum/controller/subsystem/dbcore/proc/Disconnect()
 	failed_connections = 0

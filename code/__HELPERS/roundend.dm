@@ -218,7 +218,9 @@
 		log_game("[antag_name]s :[L.Join(", ")].")
 
 	CHECK_TICK
-	SSdbcore.SetRoundEnd()
+	log_world("REBOOT_AUDIT: declare_completion calling SetRoundEnd + TriggerRoundEndTgsEvent world.time=[world.time]")
+	SSdbcore.SetRoundEnd()  // DB-only: writes end_datetime
+	SSticker.TriggerRoundEndTgsEvent()  // fires TGS event so log-parser unhides the round
 	//Collects persistence features
 	if(mode.allow_persistence_save)
 		SSpersistence.CollectData()
@@ -228,6 +230,7 @@
 
 	sleep(50)
 	ready_for_reboot = TRUE
+	log_world("REBOOT_AUDIT: declare_completion ready_for_reboot=TRUE, calling standard_reboot world.time=[world.time]")
 	standard_reboot()
 
 /datum/controller/subsystem/ticker/proc/standard_reboot()

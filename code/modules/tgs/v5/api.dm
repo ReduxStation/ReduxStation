@@ -160,22 +160,30 @@
 	return ProcessTopicJson(json, TRUE)
 
 /datum/tgs_api/v5/OnReboot()
+	log_world("REBOOT_AUDIT: DMAPI v5 OnReboot calling Bridge(REBOOT) world.time=[world.time]")
 	var/list/result = Bridge(DMAPI5_BRIDGE_COMMAND_REBOOT)
+	log_world("REBOOT_AUDIT: DMAPI v5 OnReboot Bridge returned result=[json_encode(result)] world.time=[world.time]")
 	if(!result)
+		log_world("REBOOT_AUDIT: DMAPI v5 OnReboot result is null, returning early - no port-swap")
 		return
 
 	//okay so the standard TGS proceedure is: right before rebooting change the port to whatever was sent to us in the above json's data parameter
 
 	var/port = result[DMAPI5_BRIDGE_RESPONSE_NEW_PORT]
 	if(!isnum(port))
+		log_world("REBOOT_AUDIT: DMAPI v5 OnReboot no newPort in response - returning early (TGS did not request port change)")
 		return //this is valid, server may just want use to reboot
 
+	log_world("REBOOT_AUDIT: DMAPI v5 OnReboot got newPort=[port], will call world.OpenPort")
 	if(port == 0)
 		//to byond 0 means any port and "none" means close vOv
 		port = "none"
 
 	if(!world.OpenPort(port))
 		TGS_ERROR_LOG("Unable to set port to [port]!")
+		log_world("REBOOT_AUDIT: DMAPI v5 OnReboot world.OpenPort([port]) FAILED")
+	else
+		log_world("REBOOT_AUDIT: DMAPI v5 OnReboot world.OpenPort([port]) succeeded - fade-to-title signal triggered")
 
 /datum/tgs_api/v5/InstanceName()
 	RequireInitialBridgeResponse()

@@ -57,6 +57,12 @@ SUBSYSTEM_DEF(ticker)
 	var/mode_result = "undefined"
 	var/end_state = "undefined"
 
+	/// Pending world-reboot timer scheduled by Reboot(). Tracked so a subsequent
+	/// Reboot() call can deltimer the previous one (no double-fire) and so
+	/// admin "delay round end" can cancel via deltimer. Matches upstream
+	/// tgstation's pattern.
+	var/reboot_timer
+
 /datum/controller/subsystem/ticker/Initialize(timeofday)
 	load_mode()
 
@@ -595,6 +601,26 @@ SUBSYSTEM_DEF(ticker)
 		C.Export("##action=load_rsc", round_end_sound)
 	round_end_sound_sent = TRUE
 
+/datum/controller/subsystem/ticker/proc/TriggerRoundEndTgsEvent()
+	// Fires the TGS "RoundEnd" event SYNCHRONOUSLY. Caller blocks here until
+	// TGS has run Configuration/EventScripts/RoundEnd.sh to completion.
+	// Only then does the caller proceed to schedule the reboot countdown.
+	// Matches upstream tgstation TriggerRoundEndTgsEvent in roundend.dm.
+	//
+	// Two knobs that make this race-free relative to TgsReboot inside
+	// world.Reboot:
+	//   1. No `set waitfor = FALSE` so the proc blocks the caller.
+	//   2. `wait_for_completion = TRUE` makes DMAPI busy-wait on
+	//      pending_events[event_id] until TGS notifies completion.
+	// Combined: only ONE TGS Bridge call is in flight at a time. The
+	// Bridge(EVENT) here completes before SSticker.Reboot schedules its
+	// countdown timer. By the time world.Reboot fires Bridge(REBOOT),
+	// TGS is idle and the response is clean.
+	log_world("REBOOT_AUDIT: TriggerRoundEndTgsEvent start round_id=[GLOB.round_id] world.time=[world.time]")
+	if(GLOB.round_id)
+		world.TgsTriggerEvent("RoundEnd", list("[GLOB.round_id]"), wait_for_completion = TRUE)
+	log_world("REBOOT_AUDIT: TriggerRoundEndTgsEvent done round_id=[GLOB.round_id] world.time=[world.time]")
+
 /datum/controller/subsystem/ticker/proc/Reboot(reason, end_string, delay)
 	set waitfor = FALSE
 	if(usr && !check_rights(R_ADMIN, TRUE)) // hippie -- lets trialmins restart the server aswell
@@ -608,17 +634,9 @@ SUBSYSTEM_DEF(ticker)
 		to_chat(world, "<span class='boldannounce'>An admin has delayed the round end.</span>")
 		return
 
+	log_world("REBOOT_AUDIT: SSticker.Reboot entry reason=[reason] end_string=[end_string] delay=[delay] world.time=[world.time]")
+
 	to_chat(world, "<span class='boldannounce'>Rebooting World in [DisplayTimeText(delay)]. [reason]</span>")
-
-	var/start_wait = world.time
-	UNTIL(round_end_sound_sent || (world.time - start_wait) > (delay * 2))	//don't wait forever
-	sleep(delay - (world.time - start_wait))
-
-	if(delay_end && !skip_delay)
-		to_chat(world, "<span class='boldannounce'>Reboot was cancelled by an admin.</span>")
-		return
-	if(end_string)
-		end_state = end_string
 
 	var/statspage = CONFIG_GET(string/roundstatsurl)
 	var/gamelogloc = CONFIG_GET(string/gamelogurl)
@@ -627,7 +645,52 @@ SUBSYSTEM_DEF(ticker)
 	else if(gamelogloc)
 		to_chat(world, "<span class='info'>Round logs can be located <a href=\"[gamelogloc]\">at this website!</a></span>")
 
+	// Wait for the round-end sound to finish loading on clients, with a
+	// safety cap at 2x the countdown so we don't hang the reboot forever
+	// on a client that never acks. After this returns we have at most
+	// `delay - elapsed` deciseconds left before the timer should fire.
+	var/start_wait = world.time
+	UNTIL(round_end_sound_sent || (world.time - start_wait) > (delay * 2))
+
+	// Schedule the actual world.Reboot via SSTimer instead of doing
+	// `sleep + world.Reboot()` inline. Reason: this proc has
+	// `set waitfor = FALSE` (background coroutine). If we sleep + call
+	// world.Reboot inline, the coroutine stays alive across the reboot
+	// and any prior async state (e.g., a TGS event Bridge stack from
+	// the caller verb) can leak into the world.Reboot path. With
+	// addtimer, reboot_callback fires from a fresh SSTimer-launched
+	// stack, so the caller's coroutine has fully terminated by the
+	// time world.Reboot runs. Matches upstream tgstation's pattern.
+	if(!isnull(reboot_timer))
+		log_world("REBOOT_AUDIT: SSticker.Reboot cancelling previous reboot_timer=[reboot_timer]")
+		deltimer(reboot_timer)
+	var/timer_delay = delay - (world.time - start_wait)
+	if(timer_delay < 0)
+		timer_delay = 0
+	reboot_timer = addtimer(CALLBACK(src, PROC_REF(reboot_callback), reason, end_string), timer_delay, TIMER_STOPPABLE)
+	log_world("REBOOT_AUDIT: SSticker.Reboot scheduled reboot_callback in [timer_delay]ds timer=[reboot_timer] world.time=[world.time]")
+
+/datum/controller/subsystem/ticker/proc/reboot_callback(reason, end_string)
+	// Fires from SSTimer after the Reboot() countdown elapses. Runs on a
+	// FRESH stack, not the caller's set-waitfor-FALSE coroutine, so any
+	// in-flight TGS event Bridge or other prior async state has fully
+	// terminated before we reach world.Reboot.
+	log_world("REBOOT_AUDIT: reboot_callback fired reason=[reason] end_string=[end_string] world.time=[world.time]")
+	reboot_timer = null
+
+	// Last-chance admin-cancel check. If an admin toggled delay_end during
+	// the countdown and the deltimer race lost (we got fired anyway),
+	// honour the delay and bail.
+	if(delay_end)
+		log_world("REBOOT_AUDIT: reboot_callback aborted - delay_end set")
+		to_chat(world, "<span class='boldannounce'>Reboot was cancelled by an admin.</span>")
+		return
+
+	if(end_string)
+		end_state = end_string
+
 	log_game("<span class='boldannounce'>Rebooting World. [reason]</span>")
+	log_world("REBOOT_AUDIT: reboot_callback calling world.Reboot()")
 
 	world.Reboot()
 
