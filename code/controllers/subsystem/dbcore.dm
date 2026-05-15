@@ -17,12 +17,6 @@ SUBSYSTEM_DEF(dbcore)
 	var/datum/BSQL_Connection/connection
 	var/datum/BSQL_Operation/connectOperation
 
-	/// Set TRUE the first time SetRoundEnd() successfully writes the row,
-	/// so subsequent calls become no-ops. Lets us call SetRoundEnd from
-	/// both the natural round-end path (declare_completion -> Reboot_Helper)
-	/// AND the world.Reboot fallback without double-writing the row.
-	var/round_end_recorded = FALSE
-
 /datum/controller/subsystem/dbcore/Initialize()
 	//We send warnings to the admins during subsystem init, as the clients will be New'd and messages
 	//will queue properly with goonchat
@@ -151,32 +145,16 @@ SUBSYSTEM_DEF(dbcore)
 	qdel(query_round_start)
 
 /datum/controller/subsystem/dbcore/proc/SetRoundEnd()
-	// DB-only: writes end_datetime + game_mode_result + station_name to the
-	// SS13_round row. Does NOT fire the TGS RoundEnd event by design.
-	//
-	// Idempotent: declare_completion calls this for natural round ends, and
-	// admin restart verbs / vote restart call it before SSticker.Reboot as
-	// a fallback for paths that bypass declare_completion. The flag stops
-	// the SQL UPDATE from running twice when both paths execute.
-	//
-	// The TGS RoundEnd event lives in its own proc (SSticker.TriggerRoundEndTgsEvent)
-	// and is fired BEFORE SSticker.Reboot kicks off its countdown. Keeping
-	// the TGS event out of this proc prevents back-to-back TgsTriggerEvent
-	// + TgsReboot races that break the BYOND client-reconnect redirect on
-	// admin reboots. Matches upstream tgstation's separation of concerns.
-	log_world("REBOOT_AUDIT: SSdbcore.SetRoundEnd entry round_id=[GLOB.round_id] round_end_recorded=[round_end_recorded] world.time=[world.time]")
-	if(round_end_recorded)
-		log_world("REBOOT_AUDIT: SSdbcore.SetRoundEnd skipped - already recorded")
-		return
 	if(!Connect())
-		log_world("REBOOT_AUDIT: SSdbcore.SetRoundEnd skipped - DB not connected")
 		return
 	var/sql_station_name = sanitizeSQL(station_name())
 	var/datum/DBQuery/query_round_end = SSdbcore.NewQuery("UPDATE [format_table_name("round")] SET end_datetime = Now(), game_mode_result = '[sanitizeSQL(SSticker.mode_result)]', station_name = '[sql_station_name]' WHERE id = [GLOB.round_id]")
 	query_round_end.Execute()
 	qdel(query_round_end)
-	round_end_recorded = TRUE
-	log_world("REBOOT_AUDIT: SSdbcore.SetRoundEnd done DB update committed world.time=[world.time]")
+	// Notify TGS that the current round has finished so the public log
+	// parser stops hiding it.
+	if(GLOB.round_id)
+		world.TgsTriggerEvent("RoundEnd", list("[GLOB.round_id]"))
 
 /datum/controller/subsystem/dbcore/proc/Disconnect()
 	failed_connections = 0

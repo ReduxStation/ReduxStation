@@ -226,27 +226,14 @@ GLOBAL_VAR_INIT(tgs_initialized, FALSE)
 	qdel(src)	//shut it down
 
 /world/Reboot(reason = 0, fast_track = FALSE)
-	// DO NOT call SSdbcore.SetRoundEnd() from here. SetRoundEnd (DB-only)
-	// and SSticker.TriggerRoundEndTgsEvent (TGS event) are now invoked
-	// from every reboot entry point (admin verb, vote, declare_completion)
-	// BEFORE this proc runs. By the time we're here, the TGS EVENT bridge
-	// has fully drained and only ONE bridge call - TgsReboot's REBOOT -
-	// will be in flight. That keeps the response clean so world.OpenPort
-	// fires and BYOND's fade-to-title + client-reconnect signal works.
-
-	log_world("REBOOT_AUDIT: /world/Reboot entry reason=[reason] fast_track=[fast_track] world.time=[world.time]")
-
 	if (reason || fast_track) //special reboot, do none of the normal stuff
 		if (usr)
 			log_admin("[key_name(usr)] Has requested an immediate world restart via client side debugging tools")
 			message_admins("[key_name_admin(usr)] Has requested an immediate world restart via client side debugging tools")
 		to_chat(world, "<span class='boldannounce'>Rebooting World immediately due to host request</span>")
-		log_world("REBOOT_AUDIT: /world/Reboot fast_track=TRUE, skipping Master.Shutdown")
 	else
 		to_chat(world, "<span class='boldannounce'>Rebooting world...</span>")
-		log_world("REBOOT_AUDIT: /world/Reboot calling Master.Shutdown world.time=[world.time]")
 		Master.Shutdown()	//run SS shutdowns
-		log_world("REBOOT_AUDIT: /world/Reboot Master.Shutdown returned world.time=[world.time]")
 
 	if(TEST_RUN_PARAMETER in params)
 		FinishTestRun()
@@ -268,19 +255,14 @@ GLOBAL_VAR_INIT(tgs_initialized, FALSE)
 					text2file("[++GLOB.restart_counter]", RESTART_COUNTER_PATH)
 					do_hard_reboot = FALSE
 
-		log_world("REBOOT_AUDIT: /world/Reboot TgsAvailable=TRUE do_hard_reboot=[do_hard_reboot] ruhr=[ruhr] counter=[GLOB.restart_counter]")
 		if(do_hard_reboot)
 			log_world("World hard rebooted at [time_stamp()]")
-			log_world("REBOOT_AUDIT: /world/Reboot HARD path calling shutdown_logging then TgsEndProcess")
 			shutdown_logging() // See comment below.
 			TgsEndProcess()
 
 	log_world("World rebooted at [time_stamp()]")
-	log_world("REBOOT_AUDIT: /world/Reboot calling TgsReboot world.time=[world.time]")
 
 	TgsReboot()
-	log_world("REBOOT_AUDIT: /world/Reboot TgsReboot returned world.time=[world.time]")
-	log_world("REBOOT_AUDIT: /world/Reboot calling shutdown_logging then ..() (BYOND native)")
 	shutdown_logging() // Past this point, no logging procs can be used, at risk of data loss.
 	..()
 
