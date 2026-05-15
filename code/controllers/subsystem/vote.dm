@@ -150,11 +150,6 @@ hippie end */
 				active_admins = 1
 				break
 		if(!active_admins)
-			// Fire the TGS RoundEnd event BEFORE SSticker.Reboot so the
-			// log-parser unhides the round and the eventual TgsReboot
-			// inside world.Reboot does not race with a same-tick TGS event.
-			// Same pattern as the admin Regular Restart verb.
-			SSticker.TriggerRoundEndTgsEvent()
 			SSticker.Reboot("Restart vote successful.", "restart vote")
 		else
 			to_chat(world, "<span style='boldannounce'>Notice:Restart vote will not restart the server automatically because there are active admins on.</span>")
