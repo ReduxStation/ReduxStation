@@ -237,3 +237,6 @@ docker-compose.override.yml
 # `import /etc/caddy/sites.d/*.caddy`. Each operator's site list is their own
 # concern; the directory only exists when the override compose mounts it.
 caddy-sites.d/
+
+# Per-worktree scratch / status / journal files. Never tracked.
+.claude/

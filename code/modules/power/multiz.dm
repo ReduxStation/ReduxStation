@@ -100,13 +100,13 @@
 	if(!above && !below)
 		to_chat(user, "<span class='danger'>Cannot access valid powernet. Attempting to re-establish. Ensure any relays above and below are aligned properly and on cable nodes.</span>")
 		find_relays()
-		addtimer(CALLBACK(src, .proc/refresh), 20) //Wait a bit so we can find the one below, then get powering
+		addtimer(CALLBACK(src, PROC_REF(refresh)), 20) //Wait a bit so we can find the one below, then get powering
 	return TRUE
 
 /obj/machinery/power/deck_relay/Initialize()
 	. = ..()
-	addtimer(CALLBACK(src, .proc/find_relays), 30)
-	addtimer(CALLBACK(src, .proc/refresh), 50) //Wait a bit so we can find the one below, then get powering
+	addtimer(CALLBACK(src, PROC_REF(find_relays)), 30)
+	addtimer(CALLBACK(src, PROC_REF(refresh)), 50) //Wait a bit so we can find the one below, then get powering
 
 ///Handles re-acquiring + merging powernets found by find_relays()
 /obj/machinery/power/deck_relay/proc/refresh()
