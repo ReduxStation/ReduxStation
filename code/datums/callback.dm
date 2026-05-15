@@ -62,11 +62,6 @@
 /world/proc/ImmediateInvokeAsync(thingtocall, proctocall, ...)
 	set waitfor = FALSE
 
-	// AUDIT-DISPATCH: INVOKE_ASYNC macro expands to a call here. Bug B button
-	// activation goes through this path. Scoped to relevant target types to
-	// keep log volume manageable.
-	var/should_audit = (thingtocall && thingtocall != GLOBAL_PROC && (istype(thingtocall, /obj/item/grenade) || istype(thingtocall, /obj/machinery/door/airlock) || istype(thingtocall, /obj/item/assembly/control) || istype(thingtocall, /obj/machinery/button)))
-
 	if (!thingtocall)
 		return
 
@@ -75,37 +70,19 @@
 	if (thingtocall == GLOBAL_PROC)
 		call(proctocall)(arglist(calling_arguments))
 	else
-		if (should_audit)
-			var/datum/typed = thingtocall
-			log_game("AUDIT ImmediateInvokeAsync: about to call(thing=[thingtocall]([typed.type]), proc=[proctocall])")
 		call(thingtocall, proctocall)(arglist(calling_arguments))
-		if (should_audit)
-			var/datum/typed_after = thingtocall
-			log_game("AUDIT ImmediateInvokeAsync: call returned for thing=[thingtocall]([typed_after.type]) proc=[proctocall]")
 
 /datum/callback/proc/Invoke(...)
-	// AUDIT-DISPATCH: synchronous version. PushUsr (used by both Invoke and
-	// InvokeAsync !usr branches) calls Invoke, so the audit needs to live here
-	// to capture timer-fired chem_grenade/airlock callbacks that route through
-	// the user-weakref path.
-	var/datum/audit_obj = object
-	var/should_audit = (object && object != GLOBAL_PROC && (istype(object, /obj/item/grenade) || istype(object, /obj/machinery/door/airlock) || istype(object, /obj/item/assembly/control) || istype(object, /obj/machinery/button)))
-	if (should_audit)
-		log_game("AUDIT callback/Invoke ENTRY: object=[object]([audit_obj.type]) delegate=[delegate] usr=[usr]")
 	if(!usr)
 		var/datum/weakref/W = user
 		if(W)
 			var/mob/M = W.resolve()
 			if(M)
-				if (should_audit)
-					log_game("AUDIT callback/Invoke: !usr branch resolved user=[M] - calling PushUsr (recurses to Invoke)")
 				if (length(args))
 					return world.PushUsr(arglist(list(M, src) + args))
 				return world.PushUsr(M, src)
 
 	if (!object)
-		if (should_audit)
-			log_game("AUDIT callback/Invoke: !object early-return")
 		return
 
 	var/list/calling_arguments = arguments
@@ -115,45 +92,26 @@
 		else
 			calling_arguments = args
 	if(datum_flags & DF_VAR_EDITED)
-		if (should_audit)
-			log_game("AUDIT callback/Invoke: DF_VAR_EDITED branch - WrapAdminProcCall")
 		return WrapAdminProcCall(object, delegate, calling_arguments)
 	if (object == GLOBAL_PROC)
-		if (should_audit)
-			log_game("AUDIT callback/Invoke: GLOBAL_PROC branch")
 		return call(delegate)(arglist(calling_arguments))
-	if (should_audit)
-		log_game("AUDIT callback/Invoke: about to call(object=[object]([audit_obj.type]), delegate=[delegate])")
 	. = call(object, delegate)(arglist(calling_arguments))
-	if (should_audit)
-		log_game("AUDIT callback/Invoke: call returned for object=[object]([audit_obj.type]) delegate=[delegate] result=[isnull(.) ? "null" : "[.]"]")
 	return .
 
 //copy and pasted because fuck proc overhead
 /datum/callback/proc/InvokeAsync(...)
 	set waitfor = FALSE
 
-	// AUDIT-DISPATCH: async version. SSTimer fires callbacks via this path.
-	// Bug A and Bug F both come through here.
-	var/datum/audit_obj_async = object
-	var/should_audit_async = (object && object != GLOBAL_PROC && (istype(object, /obj/item/grenade) || istype(object, /obj/machinery/door/airlock) || istype(object, /obj/item/assembly/control) || istype(object, /obj/machinery/button)))
-	if (should_audit_async)
-		log_game("AUDIT callback/InvokeAsync ENTRY: object=[object]([audit_obj_async.type]) delegate=[delegate] usr=[usr]")
-
 	if(!usr)
 		var/datum/weakref/W = user
 		if(W)
 			var/mob/M = W.resolve()
 			if(M)
-				if (should_audit_async)
-					log_game("AUDIT callback/InvokeAsync: !usr branch resolved user=[M] - calling PushUsr (routes to Invoke)")
 				if (length(args))
 					return world.PushUsr(arglist(list(M, src) + args))
 				return world.PushUsr(M, src)
 
 	if (!object)
-		if (should_audit_async)
-			log_game("AUDIT callback/InvokeAsync: !object early-return")
 		return
 
 	var/list/calling_arguments = arguments
@@ -163,18 +121,10 @@
 		else
 			calling_arguments = args
 	if(datum_flags & DF_VAR_EDITED)
-		if (should_audit_async)
-			log_game("AUDIT callback/InvokeAsync: DF_VAR_EDITED branch - WrapAdminProcCall")
 		return WrapAdminProcCall(object, delegate, calling_arguments)
 	if (object == GLOBAL_PROC)
-		if (should_audit_async)
-			log_game("AUDIT callback/InvokeAsync: GLOBAL_PROC branch")
 		return call(delegate)(arglist(calling_arguments))
-	if (should_audit_async)
-		log_game("AUDIT callback/InvokeAsync: about to call(object=[object]([audit_obj_async.type]), delegate=[delegate])")
 	. = call(object, delegate)(arglist(calling_arguments))
-	if (should_audit_async)
-		log_game("AUDIT callback/InvokeAsync: call returned for object=[object]([audit_obj_async.type]) delegate=[delegate] result=[isnull(.) ? "null" : "[.]"]")
 	return .
 
 

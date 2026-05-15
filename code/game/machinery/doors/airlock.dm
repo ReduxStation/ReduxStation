@@ -334,13 +334,10 @@
 					new /datum/hallucination/shock(H)
 					return
 	if (cyclelinkedairlock)
-		log_game("AUDIT airlock cycle path: src=[src] linked=[cyclelinkedairlock]([cyclelinkedairlock.type]) shuttledocked=[shuttledocked] emergency=[emergency] linked.shuttledocked=[cyclelinkedairlock.shuttledocked] linked.emergency=[cyclelinkedairlock.emergency] allowed=[allowed(user)]")
 		if (!shuttledocked && !emergency && !cyclelinkedairlock.shuttledocked && !cyclelinkedairlock.emergency && allowed(user))
 			if(cyclelinkedairlock.operating)
-				log_game("AUDIT airlock cycle: linked operating=TRUE, setting delayed_close_requested (NOT queuing timer)")
 				cyclelinkedairlock.delayed_close_requested = TRUE
 			else
-				log_game("AUDIT airlock cycle: queuing addtimer CALLBACK(linked, PROC_REF(close)) in 2 ticks - linked.operating=FALSE")
 				// BYOND 516 dispatch fix: PROC_REF(close) goes through dynamic
 				// dispatch and reaches the airlock override (which sets the
 				// AIRLOCK_CLOSING / AIRLOCK_CLOSED sprite states). With the old
@@ -1081,13 +1078,7 @@
 
 
 /obj/machinery/door/airlock/open(forced=0)
-	// AUDIT-DISPATCH: confirms the airlock override fires. If this AND the
-	// "BASE door/open" audit both fire for the same airlock, both bodies ran.
-	// If only this fires, dispatch works correctly. If only base fires, dispatch
-	// is static and Bug A is rooted.
-	log_game("AUDIT OVERRIDE airlock/open FIRED: src=[src] type=[type] operating=[operating] welded=[welded] locked=[locked] density=[density] forced=[forced]")
 	if( operating || welded || locked )
-		log_game("AUDIT airlock/open: early-return guard - operating=[operating] welded=[welded] locked=[locked]")
 		return FALSE
 	if(!forced)
 		if(!hasPower() || wires.is_cut(WIRE_OPEN))
@@ -1141,10 +1132,7 @@
 
 
 /obj/machinery/door/airlock/close(forced=0)
-	// AUDIT-DISPATCH: see airlock/open audit comment. Bug A diagnostic.
-	log_game("AUDIT OVERRIDE airlock/close FIRED: src=[src] type=[type] operating=[operating] welded=[welded] locked=[locked] density=[density] forced=[forced]")
 	if(operating || welded || locked)
-		log_game("AUDIT airlock/close: early-return guard - operating=[operating] welded=[welded] locked=[locked]")
 		return
 	if(density)
 		return TRUE

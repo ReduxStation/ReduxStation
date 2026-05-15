@@ -276,11 +276,6 @@
 
 
 /obj/machinery/door/proc/open()
-	// AUDIT-DISPATCH: if this base body fires for an airlock instance, the
-	// callback dispatched statically to the base instead of the airlock override
-	// (which lives in airlock.dm). Bug A diagnostic.
-	if(istype(src, /obj/machinery/door/airlock))
-		log_game("AUDIT BASE door/open FIRED on airlock src=[src] type=[type] operating=[operating] density=[density]")
 	if(!density)
 		return 1
 	if(operating)
@@ -303,12 +298,6 @@
 	return 1
 
 /obj/machinery/door/proc/close()
-	// AUDIT-DISPATCH: if this base body fires for an airlock instance, the
-	// callback dispatched statically to the base instead of the airlock override.
-	// Bug A diagnostic - "airlock cycle sprite frozen" symptom matches base
-	// running (which physically closes) while airlock animation states are skipped.
-	if(istype(src, /obj/machinery/door/airlock))
-		log_game("AUDIT BASE door/close FIRED on airlock src=[src] type=[type] operating=[operating] density=[density]")
 	if(density)
 		return TRUE
 	if(operating || welded)

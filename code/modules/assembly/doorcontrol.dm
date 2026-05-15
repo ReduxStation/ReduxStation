@@ -14,23 +14,15 @@
 		. += "<span class='notice'>Its channel ID is '[id]'.</span>"
 
 /obj/item/assembly/control/activate()
-	// AUDIT-DISPATCH: door-button activate override. If button presses don't
-	// proc and this audit never fires, dispatch went to base. If this fires
-	// but no doors move, the for-loop found zero matching poddoors (id mismatch).
-	log_game("AUDIT OVERRIDE control/activate FIRED: src=[src] type=[type] cooldown=[cooldown] id=[id] sync_doors=[sync_doors]")
 	var/openclose
 	if(cooldown)
-		log_game("AUDIT control/activate: cooldown=TRUE early-return")
 		return
 	cooldown = TRUE
-	var/match_count = 0
 	for(var/obj/machinery/door/poddoor/M in GLOB.machines)
 		if(M.id == src.id)
-			match_count++
 			if(openclose == null || !sync_doors)
 				openclose = M.density
 			INVOKE_ASYNC(M, openclose ? TYPE_PROC_REF(/obj/machinery/door/poddoor, open) : TYPE_PROC_REF(/obj/machinery/door/poddoor, close))
-	log_game("AUDIT control/activate: matched [match_count] poddoors with id=[id]")
 	addtimer(VARSET_CALLBACK(src, cooldown, FALSE), 10)
 
 
@@ -48,21 +40,13 @@
 	*/
 
 /obj/item/assembly/control/airlock/activate()
-	// AUDIT-DISPATCH: airlock-button activate override. Same shape as
-	// /control/activate audit but for airlock-style buttons (Secure Storage,
-	// RD, Bridge, etc.). If buttons don't work and this doesn't fire, dispatch
-	// went to base. If this fires but doors don't open, id_tag mismatch.
-	log_game("AUDIT OVERRIDE control/airlock/activate FIRED: src=[src] type=[type] cooldown=[cooldown] id=[id] specialfunctions=[specialfunctions]")
 	if(cooldown)
-		log_game("AUDIT control/airlock/activate: cooldown=TRUE early-return")
 		return
 	cooldown = TRUE
 	var/doors_need_closing = FALSE
 	var/list/obj/machinery/door/airlock/open_or_close = list()
-	var/match_count = 0
 	for(var/obj/machinery/door/airlock/D in GLOB.airlocks)
 		if(D.id_tag == src.id)
-			match_count++
 			if(specialfunctions & OPEN)
 				open_or_close += D
 				if(!D.density)
@@ -81,7 +65,6 @@
 			if(specialfunctions & SAFE)
 				D.safe = !D.safe
 
-	log_game("AUDIT control/airlock/activate: matched [match_count] airlocks with id_tag=[id]; queuing [length(open_or_close)] doors to [doors_need_closing ? "close" : "open"]")
 	for(var/D in open_or_close)
 		INVOKE_ASYNC(D, doors_need_closing ? TYPE_PROC_REF(/obj/machinery/door/airlock, close) : TYPE_PROC_REF(/obj/machinery/door/airlock, open))
 
