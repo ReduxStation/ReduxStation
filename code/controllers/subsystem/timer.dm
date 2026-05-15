@@ -258,7 +258,12 @@ SUBSYSTEM_DEF(timer)
 	if (!length(alltimers))
 		return
 
-	sortTim(alltimers, PROC_REF(cmp_timer))
+	// cmp_timer is a global proc (`/proc/cmp_timer` in code/__HELPERS/cmp.dm).
+	// sortTim's internal comparator dispatch uses `call(cmp)(args)` one-arg
+	// form, which needs a typepath value. PROC_REF expands to the string
+	// "cmp_timer" and one-arg `call(string)` cannot resolve a global by short
+	// name, producing 256 sortInstance "bad proc" runtimes per round.
+	sortTim(alltimers, GLOBAL_PROC_REF(cmp_timer))
 
 	var/datum/timedevent/head = alltimers[1]
 
