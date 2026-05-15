@@ -150,6 +150,20 @@ hippie end */
 				active_admins = 1
 				break
 		if(!active_admins)
+			// Same sequence as the admin "Regular Restart" verb:
+			// 1. SetRoundEnd (DB-only) records end_datetime / mode_result
+			//    in SS13_round while DB is still healthy.
+			// 2. TriggerRoundEndTgsEvent fires the TGS event synchronously
+			//    (wait_for_completion = TRUE) so the log-parser unhides
+			//    the round and the EVENT bridge is fully drained before
+			//    we schedule the reboot.
+			// 3. SSticker.Reboot schedules world.Reboot via SSTimer's
+			//    reboot_callback, ensuring it fires from a fresh stack
+			//    with no in-flight bridge calls to race against the
+			//    TgsReboot inside world.Reboot.
+			if(GLOB.round_id && SSdbcore && SSdbcore.IsConnected())
+				SSdbcore.SetRoundEnd()
+			SSticker.TriggerRoundEndTgsEvent()
 			SSticker.Reboot("Restart vote successful.", "restart vote")
 		else
 			to_chat(world, "<span style='boldannounce'>Notice:Restart vote will not restart the server automatically because there are active admins on.</span>")

@@ -226,28 +226,32 @@ GLOBAL_VAR_INIT(tgs_initialized, FALSE)
 	qdel(src)	//shut it down
 
 /world/Reboot(reason = 0, fast_track = FALSE)
-	// DO NOT call SSdbcore.SetRoundEnd() from here. It fires
-	// world.TgsTriggerEvent("RoundEnd", ...), which talks to TGS. A few
-	// lines below we also call TgsReboot() , that is the second TGS
-	// interaction in this same proc. On admin "Regular Restart" (the only
-	// non-natural path that exercises this) the two back-to-back TGS calls
-	// land within ~1 DD tick of each other and TGS is still mid-handling
-	// the RoundEnd event when the reboot command arrives. The race causes
-	// the port-swap / client-redirect that BYOND's native `..()` reboot
-	// depends on to drop, and DreamSeeker clients crash with no reconnect
-	// link. Natural round end (declare_completion -> SetRoundEnd ->
-	// SSticker.Reboot countdown -> world.Reboot) does not race because
-	// SetRoundEnd runs minutes before world.Reboot is even queued.
+	// NO SetRoundEnd or TGS-event call here. Matches upstream tgstation's
+	// /world/Reboot exactly. Reason: a DB UPDATE here adds wall-clock
+	// latency between Master.Shutdown and TgsReboot's Bridge(REBOOT) call,
+	// and a TGS event here would race the imminent Bridge(REBOOT). Either
+	// can cause TGS's response to TgsReboot to be malformed or delayed,
+	// preventing world.OpenPort(new_port) from firing -- and that
+	// OpenPort call is the ONLY thing that makes BYOND clients fade to
+	// title and reconnect.
 	//
-	// Trade-off: admin-rebooted rounds end with NULL end_datetime /
-	// game_mode_result in SS13_round (hidden from stats.owo.fm, log-parser
-	// keeps the round directory hidden until the next RoundStart fires
-	// and overwrites serverinfo.json). This matches upstream tgstation's
-	// behavior , they accept the NULL for admin reboots specifically to
-	// keep the client reconnect path clean. Followed-up by PR #46's
-	// canonical event-script wiring and the wrapper pattern; nothing here
-	// needs to change for stats hygiene because the next RoundStart event
-	// always supersedes the stale serverinfo.json within seconds.
+	// All call sites that hit this proc MUST record end_datetime
+	// themselves BEFORE calling world.Reboot, while there is still real
+	// time before the timing-sensitive reboot path:
+	//   * Natural end: declare_completion -> SSdbcore.SetRoundEnd ->
+	//     SSticker.TriggerRoundEndTgsEvent -> sleep(5s) -> standard_reboot
+	//     -> SSticker.Reboot -> reboot_callback (SSTimer) -> world.Reboot.
+	//   * Admin "Regular Restart" verb (admin.dm): SetRoundEnd ->
+	//     TriggerRoundEndTgsEvent -> SSticker.Reboot -> reboot_callback
+	//     -> world.Reboot.
+	//   * Admin "Hard Restart" / "Hardest Restart" verbs (admin.dm):
+	//     SetRoundEnd -> world.Reboot (no TGS event; deliberate, these
+	//     are emergency options that intentionally skip event firing).
+	//   * Vote restart (vote.dm / hippiestation/vote.dm): SetRoundEnd ->
+	//     TriggerRoundEndTgsEvent -> SSticker.Reboot -> reboot_callback
+	//     -> world.Reboot.
+	//   * Admin "Server Restart" (world.TgsEndProcess): cannot record
+	//     end_datetime because DD is SIGKILLed -- this is intentional.
 
 	if (reason || fast_track) //special reboot, do none of the normal stuff
 		if (usr)
