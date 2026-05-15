@@ -480,7 +480,7 @@
 			var/init_by = "Initiated by [usr.client.holder.fakekey ? "Admin" : usr.key]."
 			switch(result)
 				if("Regular Restart")
-					SSticker.Reboot(init_by, "admin reboot - by [usr.key] [usr.client.holder.fakekey ? "(stealth)" : ""]", 10)
+					SSticker.Reboot(init_by, "admin reboot - by [usr.key] [usr.client.holder.fakekey ? "(stealth)" : ""]", 50)
 				if("Hard Restart (No Delay, No Feeback Reason)")
 					to_chat(world, "World reboot - [init_by]")
 					world.Reboot()
