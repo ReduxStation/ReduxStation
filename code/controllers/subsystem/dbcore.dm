@@ -132,9 +132,6 @@ SUBSYSTEM_DEF(dbcore)
 	query_round_last_id.Execute(async = FALSE)
 	if(query_round_last_id.NextRow(async = FALSE))
 		GLOB.round_id = query_round_last_id.item[1]
-		// Notify TGS that a new round just started so the public log parser
-		// can hide this round's directory until SetRoundEnd fires.
-		world.TgsTriggerEvent("RoundStart", list("[GLOB.round_id]"))
 	qdel(query_round_last_id)
 
 /datum/controller/subsystem/dbcore/proc/SetRoundStart()
@@ -151,10 +148,6 @@ SUBSYSTEM_DEF(dbcore)
 	var/datum/DBQuery/query_round_end = SSdbcore.NewQuery("UPDATE [format_table_name("round")] SET end_datetime = Now(), game_mode_result = '[sanitizeSQL(SSticker.mode_result)]', station_name = '[sql_station_name]' WHERE id = [GLOB.round_id]")
 	query_round_end.Execute()
 	qdel(query_round_end)
-	// Notify TGS that the current round has finished so the public log
-	// parser stops hiding it.
-	if(GLOB.round_id)
-		world.TgsTriggerEvent("RoundEnd", list("[GLOB.round_id]"))
 
 /datum/controller/subsystem/dbcore/proc/Disconnect()
 	failed_connections = 0
