@@ -49,19 +49,13 @@
 				. += "<span class='notice'>You see a [G.name] inside the grenade.</span>"
 
 /obj/item/grenade/chem_grenade/attack_self(mob/user)
-	log_game("AUDIT chem_grenade/attack_self: src=[src] type=[type] user=[user ? key_name(user) : "null"] stage=[stage] (READY=[GRENADE_READY] WIRED=[GRENADE_WIRED] EMPTY=[GRENADE_EMPTY]) active=[active] nadeassembly=[nadeassembly ? "[nadeassembly.type]" : "null"]")
 	if(stage == GRENADE_READY && !active)
 		if(nadeassembly)
-			log_game("AUDIT chem_grenade/attack_self: src=[src] delegating to nadeassembly.attack_self")
 			nadeassembly.attack_self(user)
 		else
-			log_game("AUDIT chem_grenade/attack_self: src=[src] calling base ..() = /obj/item/grenade/attack_self")
 			..()
 	else if(stage == GRENADE_WIRED)
-		log_game("AUDIT chem_grenade/attack_self: src=[src] stage=WIRED, opening wires UI - NOT priming")
 		wires.interact(user)
-	else
-		log_game("AUDIT chem_grenade/attack_self: src=[src] no branch matched (stage=[stage] active=[active]) - silent no-op")
 
 /obj/item/grenade/chem_grenade/attackby(obj/item/I, mob/user, params)
 	if(istype(I,/obj/item/assembly) && stage == GRENADE_WIRED)
@@ -202,9 +196,7 @@
 
 /obj/item/grenade/chem_grenade/preprime(mob/user, delayoverride, msg = TRUE, volume = 60)
 	var/turf/T = get_turf(src)
-	var/audit_beakers = beakers ? beakers.len : 0
-	var/audit_delay = isnull(delayoverride) ? det_time : delayoverride
-	log_game("AUDIT chem_grenade/preprime: src=[src] type=[type] user=[user ? key_name(user) : "null"] stage=[stage] beakers=[audit_beakers] det_time=[det_time] effective_delay=[audit_delay] landminemode=[landminemode ? "yes" : "no"]")
+	var/effective_delay = isnull(delayoverride) ? det_time : delayoverride
 	log_grenade(user, T) //Inbuilt admin procs already handle null users
 	if(user)
 		add_fingerprint(user)
@@ -216,7 +208,6 @@
 	playsound(src, pick('sound/weapons/armbomb.ogg', 'hippiestation/sound/halflife/takecover.ogg', 'hippiestation/sound/halflife/grenade.ogg'), volume, 0)
 	icon_state = initial(icon_state) + "_active"
 	if(landminemode)
-		log_game("AUDIT chem_grenade/preprime: src=[src] landminemode path - calling landminemode.activate() and returning WITHOUT queuing prime() timer (this is normal proximity-sensor behavior)")
 		landminemode.activate()
 		return
 	active = TRUE
@@ -225,18 +216,10 @@
 	// chem_grenade override. `.proc/prime` would resolve to the base typepath
 	// /obj/item/grenade/proc/prime which BYOND 516 calls statically, so the
 	// override (which actually does the chem reactions) is skipped. Bug F fix.
-	addtimer(CALLBACK(src, PROC_REF(prime)), audit_delay)
-	log_game("AUDIT chem_grenade/preprime: src=[src] timer queued for prime() in [audit_delay] deciseconds")
+	addtimer(CALLBACK(src, PROC_REF(prime)), effective_delay)
 
 /obj/item/grenade/chem_grenade/prime()
-	// AUDIT-DISPATCH: first line, no var-decl prerequisite. If this fires we know
-	// dispatch reached the override. If only "AUDIT BASE grenade/prime" fires for
-	// the same grenade, dispatch is static (Bug F root).
-	log_game("AUDIT OVERRIDE chem_grenade/prime FIRED: src=[src] type=[type] gc_destroyed=[gc_destroyed]")
-	var/audit_beakers = beakers ? beakers.len : 0
-	log_game("AUDIT chem_grenade/prime: src=[src] type=[type] stage=[stage] beakers=[audit_beakers] active=[active]")
 	if(stage != GRENADE_READY)
-		log_game("AUDIT chem_grenade/prime: src=[src] stage != GRENADE_READY ([stage] vs [GRENADE_READY]) - returning early, NO DETONATION")
 		return
 
 	var/list/datum/reagents/reactants = list()
@@ -244,7 +227,6 @@
 		reactants += G.reagents
 
 	var/turf/detonation_turf = get_turf(src)
-	log_game("AUDIT chem_grenade/prime: src=[src] calling chem_splash(loc=[AREACOORD(detonation_turf)] affected_area=[affected_area] reactants.len=[reactants.len] ignition_temp=[ignition_temp] threatscale=[threatscale])")
 
 	if(!chem_splash(detonation_turf, affected_area, reactants, ignition_temp, threatscale) && !no_splash)
 		playsound(src, 'sound/items/screwdriver2.ogg', 50, 1)

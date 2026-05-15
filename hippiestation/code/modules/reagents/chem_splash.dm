@@ -5,10 +5,7 @@ Direct holder reference "splash_holder" name changed to "source" which creates a
 This allows for the "handle_state_change" proc to type check the source of the reaction as a particle effect and apply the same code it does for smoke and foam regarding dupe reduction (currently define multipliers)
 */
 /proc/chem_splash(turf/epicenter, affected_range = 3, list/datum/reagents/reactants = list(), extra_heat = 0, threatscale = 1, adminlog = 1)
-	var/audit_reactants_len = reactants ? reactants.len : 0
-	log_game("AUDIT chem_splash: entry epicenter=[epicenter ? AREACOORD(epicenter) : "null"] affected_range=[affected_range] reactants.len=[audit_reactants_len] extra_heat=[extra_heat] threatscale=[threatscale]")
 	if(!isturf(epicenter) || !reactants.len || threatscale <= 0)
-		log_game("AUDIT chem_splash: early-return - isturf=[isturf(epicenter)] reactants.len=[audit_reactants_len] threatscale=[threatscale] - NO VISIBLE EFFECT")
 		return
 	var/has_reagents
 	var/total_reagents
@@ -18,9 +15,7 @@ This allows for the "handle_state_change" proc to type check the source of the r
 			total_reagents += R.total_volume
 
 	if(!has_reagents)
-		log_game("AUDIT chem_splash: all reactants have total_volume=0 - returning, NO VISIBLE EFFECT")
 		return
-	log_game("AUDIT chem_splash: proceeding with total_reagents=[total_reagents] (will spawn steam_spread and reaction particle)")
 
 	var/datum/reagents/source = new/datum/reagents(total_reagents*threatscale)
 	source.my_atom = epicenter

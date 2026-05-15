@@ -56,23 +56,16 @@
 
 
 /obj/item/grenade/attack_self(mob/user)
-	log_game("AUDIT grenade/attack_self: src=[src] type=[type] user=[user ? key_name(user) : "null"] active=[active]")
 	if(!active)
 		if(clown_check(user))
-			log_game("AUDIT grenade/attack_self: src=[src] clown_check passed, calling preprime")
 			preprime(user)
-		else
-			log_game("AUDIT grenade/attack_self: src=[src] clown_check returned FALSE - main preprime skipped (may have been called inside clown_check with short fuse)")
-	else
-		log_game("AUDIT grenade/attack_self: src=[src] already active=TRUE - no-op")
 
 /obj/item/grenade/proc/log_grenade(mob/user, turf/T)
 	log_bomber(user, "has primed a", src, "for detonation")
 
 /obj/item/grenade/proc/preprime(mob/user, delayoverride, msg = TRUE, volume = 60)
 	var/turf/T = get_turf(src)
-	var/audit_delay = isnull(delayoverride) ? det_time : delayoverride
-	log_game("AUDIT grenade/preprime: src=[src] type=[type] user=[user ? key_name(user) : "null"] det_time=[det_time] delayoverride=[delayoverride ? delayoverride : "null"] effective=[audit_delay]")
+	var/effective_delay = isnull(delayoverride) ? det_time : delayoverride
 	log_grenade(user, T) //Inbuilt admin procs already handle null users
 	if(user)
 		add_fingerprint(user)
@@ -81,15 +74,9 @@
 	playsound(src, pick('sound/weapons/armbomb.ogg', 'hippiestation/sound/halflife/takecover.ogg', 'hippiestation/sound/halflife/grenade.ogg'), volume, 0)
 	active = TRUE
 	icon_state = initial(icon_state) + "_active"
-	addtimer(CALLBACK(src, PROC_REF(prime)), audit_delay)
-	log_game("AUDIT grenade/preprime: src=[src] timer queued for prime() in [audit_delay] deciseconds")
+	addtimer(CALLBACK(src, PROC_REF(prime)), effective_delay)
 
 /obj/item/grenade/proc/prime()
-	// AUDIT-DISPATCH: this base body is empty - if it fires for a chem_grenade
-	// or any subclass that overrides prime(), the callback dispatched STATICALLY
-	// to the base proctype instead of the subclass override, and we have rooted
-	// Bug F. Remove once Bug F is rooted.
-	log_game("AUDIT BASE grenade/prime FIRED: src=[src] type=[type] gc_destroyed=[gc_destroyed]")
 
 /obj/item/grenade/proc/update_mob()
 	if(ismob(loc))

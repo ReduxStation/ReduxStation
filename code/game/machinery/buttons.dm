@@ -125,19 +125,8 @@
 	initialized_button = 1
 
 /obj/machinery/button/attack_hand(mob/user)
-	// AUDIT-BUTTON: full chain audit for Bug B. Each early-return path logs
-	// before returning so the trail pinpoints which guard tripped.
-	var/audit_device_desc = "null"
-	if(device)
-		if(istype(device, /obj/item/assembly/control))
-			var/obj/item/assembly/control/audit_ctrl = device
-			audit_device_desc = "[audit_ctrl.type] device_id=[audit_ctrl.id]"
-		else
-			audit_device_desc = "[device.type] (non-control)"
-	log_game("AUDIT BUTTON attack_hand ENTRY: src=[src] type=[type] button_id=[id] panel_open=[panel_open] stat=[stat] device=[audit_device_desc] user=[user?.key]")
 	. = ..()
 	if(.)
-		log_game("AUDIT BUTTON attack_hand: parent ..() returned truthy ([.]) - EARLY RETURN")
 		return
 	if(!initialized_button)
 		setup_device()
@@ -164,32 +153,24 @@
 		return
 
 	if((stat & (NOPOWER|BROKEN)))
-		log_game("AUDIT BUTTON attack_hand: NOPOWER|BROKEN early-return src=[src] stat=[stat]")
 		playsound(src, 'hippiestation/sound/halflife/button2.ogg', 100, 0)
 		return
 
 	if(device && device.next_activate > world.time)
-		log_game("AUDIT BUTTON attack_hand: device.next_activate=[device.next_activate] > world.time=[world.time] - SILENT early-return src=[src]")
 		return
 
 	if(!allowed(user))
-		log_game("AUDIT BUTTON attack_hand: allowed(user) FALSE - Access Denied src=[src] user=[user?.key] req_access=[json_encode(req_access)] req_one_access=[json_encode(req_one_access)]")
 		to_chat(user, "<span class='alert'>Access Denied.</span>")
 		flick("[skin]-denied", src)
 		playsound(src, 'hippiestation/sound/halflife/button1.ogg', 100, 0)
 		return
 
-	log_game("AUDIT BUTTON attack_hand: all guards passed - about to call device.pulsed() src=[src] device=[device ? device.type : "null"]")
 	playsound(src, pick('hippiestation/sound/halflife/button3.ogg', 'hippiestation/sound/halflife/button4.ogg', 'hippiestation/sound/halflife/button5.ogg', 'hippiestation/sound/halflife/button6.ogg', 'hippiestation/sound/halflife/button7.ogg', 'hippiestation/sound/halflife/button8.ogg', 'hippiestation/sound/halflife/button9.ogg', 'hippiestation/sound/halflife/button10.ogg', 'hippiestation/sound/halflife/button11.ogg'), 100, 0)
 	use_power(5)
 	icon_state = "[skin]1"
 
 	if(device)
 		device.pulsed()
-		log_game("AUDIT BUTTON attack_hand: device.pulsed() RETURNED src=[src]")
-	else
-		log_game("AUDIT BUTTON attack_hand: WARN device is null - no pulsed() call src=[src]")
-
 
 	addtimer(CALLBACK(src, PROC_REF(update_icon)), 15)
 

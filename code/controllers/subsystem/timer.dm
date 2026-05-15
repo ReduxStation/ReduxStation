@@ -108,15 +108,12 @@ SUBSYSTEM_DEF(timer)
 	var/static/list/spent = list()
 	var/static/datum/timedevent/timer
 	if (practical_offset > BUCKET_LEN)
-		log_game("AUDIT SSTimer/fire: practical_offset wrap. old_practical_offset=[practical_offset] BUCKET_LEN=[BUCKET_LEN] head_offset before=[head_offset] -> after=[head_offset + TICKS2DS(BUCKET_LEN)] world.time=[world.time] bucket_count=[bucket_count]")
 		head_offset += TICKS2DS(BUCKET_LEN)
 		practical_offset = 1
 		resumed = FALSE
 
 	if ((length(bucket_list) != BUCKET_LEN) || (world.tick_lag != bucket_resolution))
-		log_game("AUDIT SSTimer/fire: reset_buckets triggered. length(bucket_list)=[length(bucket_list)] BUCKET_LEN=[BUCKET_LEN] world.tick_lag=[world.tick_lag] bucket_resolution=[bucket_resolution] bucket_count_before=[bucket_count] second_queue_len=[length(second_queue)]")
 		reset_buckets()
-		log_game("AUDIT SSTimer/fire: reset_buckets done. length(bucket_list)=[length(bucket_list)] practical_offset=[practical_offset] head_offset=[head_offset] bucket_count_after=[bucket_count]")
 		bucket_list = src.bucket_list
 		resumed = FALSE
 
@@ -126,12 +123,6 @@ SUBSYSTEM_DEF(timer)
 
 	while (practical_offset <= BUCKET_LEN && head_offset + ((practical_offset-1)*world.tick_lag) <= world.time)
 		var/datum/timedevent/head = bucket_list[practical_offset]
-		// AUDIT: log only when a bucket has timers, to confirm fire() reaches
-		// the bucket the grenade/airlock callback was queued into. If the
-		// AUDIT is missing for the expected bucket number, fire() is
-		// skipping that bucket entirely.
-		if (head)
-			log_game("AUDIT SSTimer/fire: processing bucket=[practical_offset] head=\ref[head] head.target=[head.callBack ? head.callBack.object : "null"] world.time=[world.time] head_offset=[head_offset]")
 		if (!timer || !head || timer == head)
 			head = bucket_list[practical_offset]
 			timer = head
@@ -144,13 +135,6 @@ SUBSYSTEM_DEF(timer)
 			if (!timer.spent)
 				spent += timer
 				timer.spent = world.time
-				// AUDIT: log every callback invocation for chem_grenade and airlock
-				// so we can see which timers fire and which silently get skipped.
-				// Remove this block once Bug A / Bug F are rooted. Typed
-				// /datum so the `.type` accessor compiles under DM strict mode.
-				var/datum/cb_obj = callBack.object
-				if (cb_obj && (istype(cb_obj, /obj/item/grenade) || istype(cb_obj, /obj/machinery/door/airlock)))
-					log_game("AUDIT SSTimer/fire: invoking callback on [cb_obj]([cb_obj.type]) proc=[callBack.delegate] bucket=[practical_offset] timer.timeToRun=[timer.timeToRun] world.time=[world.time]")
 				callBack.InvokeAsync()
 				last_invoke_tick = world.time
 
@@ -376,19 +360,9 @@ SUBSYSTEM_DEF(timer)
 	if (callBack.object != GLOBAL_PROC && !QDESTROYING(callBack.object))
 		LAZYADD(callBack.object.active_timers, src)
 
-	// AUDIT: log timer creation for grenade/airlock so we can pair this with
-	// bucketJoin / Destroy / fire entries to reconstruct the timer's life.
-	if (callBack.object && (istype(callBack.object, /obj/item/grenade) || istype(callBack.object, /obj/machinery/door/airlock)))
-		log_game("AUDIT SSTimer/timedevent/New: timer=\ref[src] target=[callBack.object]([callBack.object.type]) proc=[callBack.delegate] wait=[wait] timeToRun=[timeToRun] head_offset=[SStimer.head_offset] world.time=[world.time] flags=[flags]")
-
 	bucketJoin()
 
 /datum/timedevent/Destroy()
-	// AUDIT: log every timedevent destroy for grenade/airlock so we can see
-	// if the timer was qdel'd before its callback fired (and from where).
-	if (callBack && callBack.object && (istype(callBack.object, /obj/item/grenade) || istype(callBack.object, /obj/machinery/door/airlock)))
-		log_game("AUDIT SSTimer/timedevent/Destroy: timer=\ref[src] target=[callBack.object]([callBack.object.type]) proc=[callBack.delegate] spent=[spent] timeToRun=[timeToRun] world.time=[world.time]")
-
 	..()
 	if (flags & TIMER_UNIQUE && hash)
 		SStimer.hashes -= hash
@@ -421,11 +395,6 @@ SUBSYSTEM_DEF(timer)
 	return QDEL_HINT_IWILLGC
 
 /datum/timedevent/proc/bucketEject()
-	// AUDIT: log eject for grenade/airlock so we can see if/why the timer
-	// was pulled out of its bucket before fire() got to it.
-	if (callBack && callBack.object && (istype(callBack.object, /obj/item/grenade) || istype(callBack.object, /obj/machinery/door/airlock)))
-		log_game("AUDIT SSTimer/timedevent/bucketEject: timer=\ref[src] target=[callBack.object]([callBack.object.type]) proc=[callBack.delegate] spent=[spent] timeToRun=[timeToRun] world.time=[world.time]")
-
 	var/bucketpos = BUCKET_POS(src)
 	var/list/bucket_list = SStimer.bucket_list
 	var/list/second_queue = SStimer.second_queue
@@ -515,11 +484,6 @@ SUBSYSTEM_DEF(timer)
 	if (bucket_pos < 1 || bucket_pos > length(bucket_list))
 		WARNING("bucket_pos = [bucket_pos] out of range 1 to [length(bucket_list)] after first clamp; hard-clamping. timeToRun = [timeToRun], head_offset = [SStimer.head_offset], practical_offset = [SStimer.practical_offset], BUCKET_LEN = [BUCKET_LEN], Timer: [SStimer.get_timer_debug_string(src)]")
 		bucket_pos = clamp(SStimer.practical_offset, 1, length(bucket_list))
-
-	// AUDIT: log every bucketJoin for grenade/airlock with the resolved bucket
-	// position so we can confirm where the timer landed.
-	if (callBack && callBack.object && (istype(callBack.object, /obj/item/grenade) || istype(callBack.object, /obj/machinery/door/airlock)))
-		log_game("AUDIT SSTimer/timedevent/bucketJoin: timer=\ref[src] target=[callBack.object]([callBack.object.type]) proc=[callBack.delegate] bucket_pos=[bucket_pos] timeToRun=[timeToRun] head_offset=[SStimer.head_offset] practical_offset=[SStimer.practical_offset] world.time=[world.time]")
 
 	//get the bucket for our tick
 	var/datum/timedevent/bucket_head = bucket_list[bucket_pos]
