@@ -498,7 +498,7 @@
 				out_of_range = TRUE
 				flash_color(vessel, flash_color="#800080", flash_time=10)
 				to_chat(vessel, "<span class='warning'>Our vessel has been moved too far away from the initial point of control, we will be disconnected if we go much further!</span>")
-				addtimer(CALLBACK(src, .proc/range_check, multiplier), 30)
+				addtimer(CALLBACK(src, PROC_REF(range_check), multiplier), 30)
 			else if(get_dist(starting_spot, vessel) > 21*multiplier)
 				release_control()
 
@@ -945,8 +945,8 @@
 			enemy.owner.RemoveSpell(new/obj/effect/proc_holder/spell/self/one_mind)
 	sound_to_playing_players('sound/effects/one_mind.ogg')
 	hive.glow = mutable_appearance('icons/effects/hivemind.dmi', "awoken", -BODY_BEHIND_LAYER)
-	addtimer(CALLBACK(user, /atom/proc/add_overlay, hive.glow), 150)
-	addtimer(CALLBACK(hive, /datum/antagonist/hivemind/proc/awaken), 150)
+	addtimer(CALLBACK(user, TYPE_PROC_REF(/atom, add_overlay), hive.glow), 150)
+	addtimer(CALLBACK(hive, TYPE_PROC_REF(/datum/antagonist/hivemind, awaken)), 150)
 	addtimer(CALLBACK(GLOBAL_PROC, /proc/send_to_playing_players, "<span class='bigassimilator'>THE ONE MIND RISES</span>"), 150)
 	addtimer(CALLBACK(GLOBAL_PROC, /proc/sound_to_playing_players, 'sound/effects/magic.ogg'), 150)
 	for(var/datum/mind/M in hive.hivemembers)
@@ -965,7 +965,7 @@
 		addtimer(CALLBACK(GLOBAL_PROC, /proc/to_chat, C, "<span class='boldwarning'>You try to remember who you are...</span>"), 90)
 		addtimer(CALLBACK(GLOBAL_PROC, /proc/to_chat, C, "<span class='assimilator'>There is no you...</span>"), 110)
 		addtimer(CALLBACK(GLOBAL_PROC, /proc/to_chat, C, "<span class='bigassimilator'>...there is only us.</span>"), 130)
-		addtimer(CALLBACK(C, /mob/living/proc/hive_awaken, new_objective, one_mind_team), 150)
+		addtimer(CALLBACK(C, TYPE_PROC_REF(/mob/living, hive_awaken), new_objective, one_mind_team), 150)
 
 /obj/effect/proc_holder/spell/self/hive_comms
 	name = "Hive Communication"

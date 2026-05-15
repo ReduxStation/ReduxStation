@@ -43,7 +43,7 @@
 
 /obj/effect/particle_effect/smoke/proc/kill_smoke()
 	STOP_PROCESSING(SSobj, src)
-	INVOKE_ASYNC(src, .proc/fade_out)
+	INVOKE_ASYNC(src, PROC_REF(fade_out))
 	QDEL_IN(src, 10)
 hippie end */
 /obj/effect/particle_effect/smoke/process()
@@ -65,7 +65,7 @@ hippie end */
 	if(C.smoke_delay)
 		return 0
 	C.smoke_delay++
-	addtimer(CALLBACK(src, .proc/remove_smoke_delay, C), 10)
+	addtimer(CALLBACK(src, PROC_REF(remove_smoke_delay), C), 10)
 	return 1
 
 /obj/effect/particle_effect/smoke/proc/remove_smoke_delay(mob/living/carbon/C)
@@ -96,7 +96,7 @@ hippie end */
 
 	//the smoke spreads rapidly but not instantly
 	for(var/obj/effect/particle_effect/smoke/SM in newsmokes)
-		addtimer(CALLBACK(SM, /obj/effect/particle_effect/smoke.proc/spread_smoke), 1)
+		addtimer(CALLBACK(SM, TYPE_PROC_REF(/obj/effect/particle_effect/smoke, spread_smoke)), 1)
 
 
 /datum/effect_system/smoke_spread
@@ -116,7 +116,7 @@ hippie end */
 	var/obj/effect/particle_effect/smoke/S = new effect_type(location)
 	S.amount = amount
 	if(S.amount)
-		INVOKE_ASYNC(S, /obj/effect/particle_effect/smoke/chem.proc/spread_smoke)
+		INVOKE_ASYNC(S, TYPE_PROC_REF(/obj/effect/particle_effect/smoke/chem, spread_smoke))
 
 
 /////////////////////////////////////////////
@@ -313,7 +313,7 @@ hippie end */
 		S.add_atom_colour(mixcolor, FIXED_COLOUR_PRIORITY) // give the smoke color, if it has any to begin with
 	S.amount = amount
 	if(S.amount)
-		INVOKE_ASYNC(S, /obj/effect/particle_effect/smoke/chem.proc/spread_smoke) //calling process right now so the smoke immediately attacks mobs.
+		INVOKE_ASYNC(S, TYPE_PROC_REF(/obj/effect/particle_effect/smoke/chem, spread_smoke)) //calling process right now so the smoke immediately attacks mobs.
 
 
 /////////////////////////////////////////////

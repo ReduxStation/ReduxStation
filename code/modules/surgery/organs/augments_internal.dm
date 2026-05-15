@@ -114,11 +114,11 @@
 
 /obj/item/organ/cyberimp/brain/anti_stun/Insert()
 	. = ..()
-	RegisterSignal(owner, signalCache, .proc/on_signal)
+	RegisterSignal(owner, signalCache, PROC_REF(on_signal))
 
 /obj/item/organ/cyberimp/brain/anti_stun/proc/on_signal(datum/source, amount)
 	if(!broken_cyber_organ && amount > 0)
-		addtimer(CALLBACK(src, .proc/clear_stuns), stun_cap_amount, TIMER_UNIQUE|TIMER_OVERRIDE)
+		addtimer(CALLBACK(src, PROC_REF(clear_stuns)), stun_cap_amount, TIMER_UNIQUE|TIMER_OVERRIDE)
 
 /obj/item/organ/cyberimp/brain/anti_stun/proc/clear_stuns()
 	if(owner || !broken_cyber_organ)
@@ -132,7 +132,7 @@
 	if(broken_cyber_organ || . & EMP_PROTECT_SELF)
 		return
 	broken_cyber_organ = TRUE
-	addtimer(CALLBACK(src, .proc/reboot), 90 / severity)
+	addtimer(CALLBACK(src, PROC_REF(reboot)), 90 / severity)
 
 /obj/item/organ/cyberimp/brain/anti_stun/proc/reboot()
 	broken_cyber_organ = FALSE

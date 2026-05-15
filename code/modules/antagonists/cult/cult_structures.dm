@@ -70,7 +70,7 @@
 		var/previouscolor = color
 		color = "#FAE48C"
 		animate(src, color = previouscolor, time = 8)
-		addtimer(CALLBACK(src, /atom/proc/update_atom_colour), 8)
+		addtimer(CALLBACK(src, TYPE_PROC_REF(/atom, update_atom_colour)), 8)
 
 
 /obj/structure/destructible/cult/talisman

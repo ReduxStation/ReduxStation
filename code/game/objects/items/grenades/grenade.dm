@@ -81,7 +81,7 @@
 	playsound(src, pick('sound/weapons/armbomb.ogg', 'hippiestation/sound/halflife/takecover.ogg', 'hippiestation/sound/halflife/grenade.ogg'), volume, 0)
 	active = TRUE
 	icon_state = initial(icon_state) + "_active"
-	addtimer(CALLBACK(src, .proc/prime), audit_delay)
+	addtimer(CALLBACK(src, PROC_REF(prime)), audit_delay)
 	log_game("AUDIT grenade/preprime: src=[src] timer queued for prime() in [audit_delay] deciseconds")
 
 /obj/item/grenade/proc/prime()

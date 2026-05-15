@@ -179,7 +179,7 @@
 		if(attached_grenade.len)
 			playsound(src, "allah", 100, 0)
 			for(var/obj/item/grenade/G in attached_grenade)
-				addtimer(CALLBACK(G, /obj/item/grenade.proc/prime), 1)
+				addtimer(CALLBACK(G, TYPE_PROC_REF(/obj/item/grenade, prime)), 1)
 			QDEL_IN(src, 3)
 	else
 		to_chat(user, "You need to be wearing the suit to trigger it.")

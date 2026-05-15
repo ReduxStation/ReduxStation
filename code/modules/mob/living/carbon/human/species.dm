@@ -1063,7 +1063,7 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 	if(radiation > RAD_MOB_HAIRLOSS)
 		if(prob(15) && !(H.hair_style == "Bald") && (HAIR in species_traits))
 			to_chat(H, "<span class='danger'>Your hair starts to fall out in clumps...</span>")
-			addtimer(CALLBACK(src, .proc/go_bald, H), 50)
+			addtimer(CALLBACK(src, PROC_REF(go_bald), H), 50)
 
 /datum/species/proc/go_bald(mob/living/carbon/human/H)
 	if(QDELETED(H))	//may be called from a timer
@@ -1322,7 +1322,7 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 			target.Paralyze(SHOVE_CHAIN_PARALYZE)
 			target.visible_message("<span class='danger'>[user.name] kicks [target.name] onto their side!</span>",
 				"<span class='danger'>[user.name] kicks you onto your side!</span>", null, COMBAT_MESSAGE_RANGE)
-			addtimer(CALLBACK(target, /mob/living/proc/SetKnockdown, 0), SHOVE_CHAIN_PARALYZE)
+			addtimer(CALLBACK(target, TYPE_PROC_REF(/mob/living, SetKnockdown), 0), SHOVE_CHAIN_PARALYZE)
 			log_combat(user, target, "kicks", "onto their side (paralyzing)")
 
 		if(shove_blocked && !target.is_shove_knockdown_blocked() && !target.buckled)
@@ -1373,7 +1373,7 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 				if(target_held_item)
 					target.visible_message("<span class='danger'>[target.name]'s grip on \the [target_held_item] loosens!</span>",
 						"<span class='danger'>Your grip on \the [target_held_item] loosens!</span>", null, COMBAT_MESSAGE_RANGE)
-				addtimer(CALLBACK(target, /mob/living/carbon/human/proc/clear_shove_slowdown), SHOVE_SLOWDOWN_LENGTH)
+				addtimer(CALLBACK(target, TYPE_PROC_REF(/mob/living/carbon/human, clear_shove_slowdown)), SHOVE_SLOWDOWN_LENGTH)
 			else if(target_held_item)
 				target.dropItemToGround(target_held_item)
 				knocked_item = TRUE

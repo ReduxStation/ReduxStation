@@ -32,7 +32,7 @@
 		var/previouscolor = color
 		color = "#FAE48C"
 		animate(src, color = previouscolor, time = 8)
-		addtimer(CALLBACK(src, /atom/proc/update_atom_colour), 8)
+		addtimer(CALLBACK(src, TYPE_PROC_REF(/atom, update_atom_colour)), 8)
 
 /turf/closed/wall/mineral/cult/artificer
 	name = "runed stone wall"
@@ -88,7 +88,7 @@
 		var/previouscolor = color
 		color = "#960000"
 		animate(src, color = previouscolor, time = 8)
-		addtimer(CALLBACK(src, /atom/proc/update_atom_colour), 8)
+		addtimer(CALLBACK(src, TYPE_PROC_REF(/atom, update_atom_colour)), 8)
 
 /turf/closed/wall/clockwork/dismantle_wall(devastated=0, explode=0)
 	if(devastated)
