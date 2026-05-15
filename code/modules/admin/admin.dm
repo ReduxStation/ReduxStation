@@ -478,44 +478,16 @@
 		if(result)
 			SSblackbox.record_feedback("tally", "admin_verb", 1, "Reboot World") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 			var/init_by = "Initiated by [usr.client.holder.fakekey ? "Admin" : usr.key]."
-			log_world("REBOOT_AUDIT: admin Reboot World verb fired by [usr.key] option=\"[result]\" world.time=[world.time]")
 			switch(result)
 				if("Regular Restart")
-					// 1. Write end_datetime / mode_result to SS13_round while DB is still
-					//    up. DB-only proc, no TGS event inside.
-					if(GLOB.round_id && SSdbcore && SSdbcore.IsConnected())
-						SSdbcore.SetRoundEnd()
-					// 2. Fire TGS RoundEnd event SYNCHRONOUSLY. Blocks until TGS's
-					//    EventScripts/RoundEnd.sh has fully run. By the time this
-					//    returns, the EVENT bridge is drained and TGS is idle.
-					SSticker.TriggerRoundEndTgsEvent()
-					// 3. Schedule the countdown. SSticker.Reboot uses addtimer +
-					//    reboot_callback so world.Reboot fires from a fresh SSTimer
-					//    stack after the delay. This verb's stack has fully unwound
-					//    by then, so the only TGS Bridge call left is TgsReboot's
-					//    REBOOT - clean response, port-swap completes, fade fires,
-					//    clients auto-reconnect.
 					SSticker.Reboot(init_by, "admin reboot - by [usr.key] [usr.client.holder.fakekey ? "(stealth)" : ""]", 10)
 				if("Hard Restart (No Delay, No Feeback Reason)")
-					// Hard Restart deliberately skips the TGS RoundEnd event
-					// (matches upstream HARD_RESTART behavior). DB row still
-					// recorded for stats hygiene.
-					if(GLOB.round_id && SSdbcore && SSdbcore.IsConnected())
-						SSdbcore.SetRoundEnd()
 					to_chat(world, "World reboot - [init_by]")
 					world.Reboot()
 				if("Hardest Restart (No actions, just reboot)")
-					// fast_track=TRUE skips Master.Shutdown inside world.Reboot.
-					// SetRoundEnd happens here first since DB is still healthy.
-					if(GLOB.round_id && SSdbcore && SSdbcore.IsConnected())
-						SSdbcore.SetRoundEnd()
 					to_chat(world, "Hard world reboot - [init_by]")
 					world.Reboot(fast_track = TRUE)
 				if("Server Restart (Kill and restart DD)")
-					// TgsEndProcess SIGKILLs DD; no DM cleanup possible after.
-					// Best-effort SetRoundEnd while we can.
-					if(GLOB.round_id && SSdbcore && SSdbcore.IsConnected())
-						SSdbcore.SetRoundEnd()
 					to_chat(world, "Server restart - [init_by]")
 					world.TgsEndProcess()
 
