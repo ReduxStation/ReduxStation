@@ -227,3 +227,17 @@ node_modules/
 
 # Environment file with real secrets (commit .env.example instead)
 .env
+
+# Server-local compose additions (commit docker-compose.override.yml.example
+# instead). Compose auto-merges docker-compose.override.yml on the live host;
+# tracking it would force a stash on every `git pull`.
+docker-compose.override.yml
+
+# Server-local Caddy site snippets imported by the canonical Caddyfile via
+# `import /etc/caddy/sites.d/*.caddy`. Each operator's site list is their own
+# concern; the directory only exists when the override compose mounts it.
+caddy-sites.d/
+
+# Per-worktree scratch / status / journal files. Never tracked.
+.claude/
+>>>>>>> 764176161e (fix: PROC_REF sweep for remaining BYOND 516 dispatch sites (#96))

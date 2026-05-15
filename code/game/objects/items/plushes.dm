@@ -523,7 +523,7 @@
 /obj/item/toy/plush/amongus/proc/DiscoAmogus()
 	current_color = random_color()
 	set_light(range, power, current_color)
-	TimerID = addtimer(CALLBACK(src, .proc/DiscoAmogus), 3, TIMER_STOPPABLE)
+	TimerID = addtimer(CALLBACK(src, PROC_REF(DiscoAmogus)), 3, TIMER_STOPPABLE)
 
 /obj/item/toy/plush/amongus/suicide_act(mob/user)
 	if(iscarbon(user))

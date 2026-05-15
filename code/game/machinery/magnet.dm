@@ -129,7 +129,7 @@
 				on = !on
 
 				if(on)
-					INVOKE_ASYNC(src, .proc/magnetic_process)
+					INVOKE_ASYNC(src, PROC_REF(magnetic_process))
 
 
 
@@ -353,7 +353,7 @@
 		pathpos++ // increase iterator
 
 		// Broadcast the signal
-		INVOKE_ASYNC(radio_connection, /datum/radio_frequency.proc/post_signal, src, signal, RADIO_MAGNETS)
+		INVOKE_ASYNC(radio_connection, TYPE_PROC_REF(/datum/radio_frequency, post_signal), src, signal, RADIO_MAGNETS)
 
 		if(speed == 10)
 			sleep(1)

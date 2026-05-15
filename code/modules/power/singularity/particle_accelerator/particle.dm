@@ -25,7 +25,7 @@
 /obj/effect/accelerated_particle/New(loc)
 	..()
 
-	addtimer(CALLBACK(src, .proc/move), 1)
+	addtimer(CALLBACK(src, PROC_REF(move)), 1)
 
 
 /obj/effect/accelerated_particle/Bump(atom/A)
@@ -66,4 +66,4 @@
 	if(movement_range == 0)
 		qdel(src)
 	else
-		addtimer(CALLBACK(src, .proc/move), speed)
+		addtimer(CALLBACK(src, PROC_REF(move)), speed)

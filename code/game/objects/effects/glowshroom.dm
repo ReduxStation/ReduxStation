@@ -80,7 +80,7 @@
 	else //if on the floor, glowshroom on-floor sprite
 		icon_state = base_icon_state
 
-	addtimer(CALLBACK(src, .proc/Spread), delay, TIMER_UNIQUE|TIMER_NO_HASH_WAIT)
+	addtimer(CALLBACK(src, PROC_REF(Spread)), delay, TIMER_UNIQUE|TIMER_NO_HASH_WAIT)
 
 
 /obj/structure/glowshroom/ComponentInitialize()
@@ -140,7 +140,7 @@
 			shrooms_planted++ //if we failed due to generation, don't try to plant one later
 	if(shrooms_planted < myseed.yield) //if we didn't get all possible shrooms planted, try again later
 		myseed.yield -= shrooms_planted
-		addtimer(CALLBACK(src, .proc/Spread), delay)
+		addtimer(CALLBACK(src, PROC_REF(Spread)), delay)
 
 /obj/structure/glowshroom/proc/CalcDir(turf/location = loc)
 	var/direction = 16
