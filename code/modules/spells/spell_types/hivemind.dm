@@ -947,8 +947,8 @@
 	hive.glow = mutable_appearance('icons/effects/hivemind.dmi', "awoken", -BODY_BEHIND_LAYER)
 	addtimer(CALLBACK(user, TYPE_PROC_REF(/atom, add_overlay), hive.glow), 150)
 	addtimer(CALLBACK(hive, TYPE_PROC_REF(/datum/antagonist/hivemind, awaken)), 150)
-	addtimer(CALLBACK(GLOBAL_PROC, /proc/send_to_playing_players, "<span class='bigassimilator'>THE ONE MIND RISES</span>"), 150)
-	addtimer(CALLBACK(GLOBAL_PROC, /proc/sound_to_playing_players, 'sound/effects/magic.ogg'), 150)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(send_to_playing_players), "<span class='bigassimilator'>THE ONE MIND RISES</span>"), 150)
+	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(sound_to_playing_players), 'sound/effects/magic.ogg'), 150)
 	for(var/datum/mind/M in hive.hivemembers)
 		var/mob/living/carbon/C = M.current
 		if(!C)
@@ -961,10 +961,10 @@
 		C.Unconscious(150)
 		C.anti_magic_check(FALSE, FALSE, TRUE, 6)
 		to_chat(C, "<span class='boldwarning'>Something's wrong...</span>")
-		addtimer(CALLBACK(GLOBAL_PROC, /proc/to_chat, C, "<span class='boldwarning'>...your memories are becoming fuzzy.</span>"), 45)
-		addtimer(CALLBACK(GLOBAL_PROC, /proc/to_chat, C, "<span class='boldwarning'>You try to remember who you are...</span>"), 90)
-		addtimer(CALLBACK(GLOBAL_PROC, /proc/to_chat, C, "<span class='assimilator'>There is no you...</span>"), 110)
-		addtimer(CALLBACK(GLOBAL_PROC, /proc/to_chat, C, "<span class='bigassimilator'>...there is only us.</span>"), 130)
+		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(to_chat), C, "<span class='boldwarning'>...your memories are becoming fuzzy.</span>"), 45)
+		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(to_chat), C, "<span class='boldwarning'>You try to remember who you are...</span>"), 90)
+		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(to_chat), C, "<span class='assimilator'>There is no you...</span>"), 110)
+		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(to_chat), C, "<span class='bigassimilator'>...there is only us.</span>"), 130)
 		addtimer(CALLBACK(C, TYPE_PROC_REF(/mob/living, hive_awaken), new_objective, one_mind_team), 150)
 
 /obj/effect/proc_holder/spell/self/hive_comms
