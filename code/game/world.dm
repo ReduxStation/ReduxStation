@@ -226,37 +226,27 @@ GLOBAL_VAR_INIT(tgs_initialized, FALSE)
 	qdel(src)	//shut it down
 
 /world/Reboot(reason = 0, fast_track = FALSE)
-	// DO NOT call SSdbcore.SetRoundEnd() from here. It fires
-	// world.TgsTriggerEvent("RoundEnd", ...), which talks to TGS. A few
-	// lines below we also call TgsReboot() , that is the second TGS
-	// interaction in this same proc. On admin "Regular Restart" (the only
-	// non-natural path that exercises this) the two back-to-back TGS calls
-	// land within ~1 DD tick of each other and TGS is still mid-handling
-	// the RoundEnd event when the reboot command arrives. The race causes
-	// the port-swap / client-redirect that BYOND's native `..()` reboot
-	// depends on to drop, and DreamSeeker clients crash with no reconnect
-	// link. Natural round end (declare_completion -> SetRoundEnd ->
-	// SSticker.Reboot countdown -> world.Reboot) does not race because
-	// SetRoundEnd runs minutes before world.Reboot is even queued.
-	//
-	// Trade-off: admin-rebooted rounds end with NULL end_datetime /
-	// game_mode_result in SS13_round (hidden from stats.owo.fm, log-parser
-	// keeps the round directory hidden until the next RoundStart fires
-	// and overwrites serverinfo.json). This matches upstream tgstation's
-	// behavior , they accept the NULL for admin reboots specifically to
-	// keep the client reconnect path clean. Followed-up by PR #46's
-	// canonical event-script wiring and the wrapper pattern; nothing here
-	// needs to change for stats hygiene because the next RoundStart event
-	// always supersedes the stale serverinfo.json within seconds.
+	// DO NOT call SSdbcore.SetRoundEnd() from here. SetRoundEnd (DB-only)
+	// and SSticker.TriggerRoundEndTgsEvent (TGS event) are now invoked
+	// from every reboot entry point (admin verb, vote, declare_completion)
+	// BEFORE this proc runs. By the time we're here, the TGS EVENT bridge
+	// has fully drained and only ONE bridge call - TgsReboot's REBOOT -
+	// will be in flight. That keeps the response clean so world.OpenPort
+	// fires and BYOND's fade-to-title + client-reconnect signal works.
+
+	log_world("REBOOT_AUDIT: /world/Reboot entry reason=[reason] fast_track=[fast_track] world.time=[world.time]")
 
 	if (reason || fast_track) //special reboot, do none of the normal stuff
 		if (usr)
 			log_admin("[key_name(usr)] Has requested an immediate world restart via client side debugging tools")
 			message_admins("[key_name_admin(usr)] Has requested an immediate world restart via client side debugging tools")
 		to_chat(world, "<span class='boldannounce'>Rebooting World immediately due to host request</span>")
+		log_world("REBOOT_AUDIT: /world/Reboot fast_track=TRUE, skipping Master.Shutdown")
 	else
 		to_chat(world, "<span class='boldannounce'>Rebooting world...</span>")
+		log_world("REBOOT_AUDIT: /world/Reboot calling Master.Shutdown world.time=[world.time]")
 		Master.Shutdown()	//run SS shutdowns
+		log_world("REBOOT_AUDIT: /world/Reboot Master.Shutdown returned world.time=[world.time]")
 
 	if(TEST_RUN_PARAMETER in params)
 		FinishTestRun()
@@ -278,14 +268,19 @@ GLOBAL_VAR_INIT(tgs_initialized, FALSE)
 					text2file("[++GLOB.restart_counter]", RESTART_COUNTER_PATH)
 					do_hard_reboot = FALSE
 
+		log_world("REBOOT_AUDIT: /world/Reboot TgsAvailable=TRUE do_hard_reboot=[do_hard_reboot] ruhr=[ruhr] counter=[GLOB.restart_counter]")
 		if(do_hard_reboot)
 			log_world("World hard rebooted at [time_stamp()]")
+			log_world("REBOOT_AUDIT: /world/Reboot HARD path calling shutdown_logging then TgsEndProcess")
 			shutdown_logging() // See comment below.
 			TgsEndProcess()
 
 	log_world("World rebooted at [time_stamp()]")
+	log_world("REBOOT_AUDIT: /world/Reboot calling TgsReboot world.time=[world.time]")
 
 	TgsReboot()
+	log_world("REBOOT_AUDIT: /world/Reboot TgsReboot returned world.time=[world.time]")
+	log_world("REBOOT_AUDIT: /world/Reboot calling shutdown_logging then ..() (BYOND native)")
 	shutdown_logging() // Past this point, no logging procs can be used, at risk of data loss.
 	..()
 

@@ -228,6 +228,14 @@ datum/controller/subsystem/vote
 				active_admins = 1
 				break
 		if(!active_admins)
+			log_world("REBOOT_AUDIT: vote restart winning, no active admins - firing SetRoundEnd + TriggerRoundEndTgsEvent before SSticker.Reboot")
+			// Same sequence as admin "Regular Restart" verb:
+			// 1. SetRoundEnd (DB-only) records end_datetime
+			// 2. TriggerRoundEndTgsEvent fires TGS event synchronously
+			// 3. SSticker.Reboot schedules world.Reboot via addtimer/reboot_callback
+			if(GLOB.round_id && SSdbcore && SSdbcore.IsConnected())
+				SSdbcore.SetRoundEnd()
+			SSticker.TriggerRoundEndTgsEvent()
 			SSticker.Reboot("Restart vote successful.", "restart vote")
 		else
 			to_chat(world, "<span style='boldannounce'>Notice: Restart vote will not restart the server automatically because there are active admins on.</span>")
