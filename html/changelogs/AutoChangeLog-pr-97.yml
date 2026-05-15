@@ -1,0 +1,5 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: "256 sortInstance bad-proc runtimes per round caused by PR #96 converting
+      sortTim's cmp_timer to PROC_REF"
