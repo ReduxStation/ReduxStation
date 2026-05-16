@@ -1,0 +1,4 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: character saves and round logs persist across server deploys

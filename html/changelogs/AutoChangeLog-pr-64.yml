@@ -1,0 +1,6 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: Mob equipment/inventory popup, signaler, and the admin Game Panel 
+      render as styled HTML again instead of as literal text. The accompanying 
+      onclose runtime in code/datums/browser.dm:441 is also fixed.

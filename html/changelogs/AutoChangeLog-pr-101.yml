@@ -1,0 +1,5 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - server: BYOND clients now preload resources from rsc.owo.fm over HTTPS 
+      instead of through the BYOND TCP socket.

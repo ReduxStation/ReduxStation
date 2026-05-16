@@ -1,0 +1,5 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: most machines, structures, and vehicles no longer break and 
+      bolt/short on the first hit they take

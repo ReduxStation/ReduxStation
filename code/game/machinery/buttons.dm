@@ -172,7 +172,6 @@
 	if(device)
 		device.pulsed()
 
-
 	addtimer(CALLBACK(src, PROC_REF(update_icon)), 15)
 
 /obj/machinery/button/door

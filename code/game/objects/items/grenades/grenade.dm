@@ -65,6 +65,7 @@
 
 /obj/item/grenade/proc/preprime(mob/user, delayoverride, msg = TRUE, volume = 60)
 	var/turf/T = get_turf(src)
+	var/effective_delay = isnull(delayoverride) ? det_time : delayoverride
 	log_grenade(user, T) //Inbuilt admin procs already handle null users
 	if(user)
 		add_fingerprint(user)
@@ -73,7 +74,7 @@
 	playsound(src, pick('sound/weapons/armbomb.ogg', 'hippiestation/sound/halflife/takecover.ogg', 'hippiestation/sound/halflife/grenade.ogg'), volume, 0)
 	active = TRUE
 	icon_state = initial(icon_state) + "_active"
-	addtimer(CALLBACK(src, PROC_REF(prime)), isnull(delayoverride)? det_time : delayoverride)
+	addtimer(CALLBACK(src, PROC_REF(prime)), effective_delay)
 
 /obj/item/grenade/proc/prime()
 

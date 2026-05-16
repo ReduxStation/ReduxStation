@@ -43,7 +43,7 @@
 	icon_state = "closed"
 	max_integrity = 300
 	var/normal_integrity = AIRLOCK_INTEGRITY_N
-	integrity_failure = 70
+	integrity_failure = 0.233
 	damage_deflection = AIRLOCK_DAMAGE_DEFLECTION_N
 	autoclose = TRUE
 	secondsElectrified = MACHINE_NOT_ELECTRIFIED //How many seconds remain until the door is no longer electrified. -1/MACHINE_ELECTRIFIED_PERMANENT = permanently electrified until someone fixes it.
@@ -338,6 +338,11 @@
 			if(cyclelinkedairlock.operating)
 				cyclelinkedairlock.delayed_close_requested = TRUE
 			else
+				// BYOND 516 dispatch fix: PROC_REF(close) goes through dynamic
+				// dispatch and reaches the airlock override (which sets the
+				// AIRLOCK_CLOSING / AIRLOCK_CLOSED sprite states). With the old
+				// .proc/close form, the base door/close ran and the door
+				// physically closed without animating. Bug A fix.
 				addtimer(CALLBACK(cyclelinkedairlock, PROC_REF(close)), 2)
 	..()
 

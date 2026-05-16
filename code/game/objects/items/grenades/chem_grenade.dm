@@ -54,7 +54,7 @@
 			nadeassembly.attack_self(user)
 		else
 			..()
-	if(stage == GRENADE_WIRED)
+	else if(stage == GRENADE_WIRED)
 		wires.interact(user)
 
 /obj/item/grenade/chem_grenade/attackby(obj/item/I, mob/user, params)
@@ -196,6 +196,7 @@
 
 /obj/item/grenade/chem_grenade/preprime(mob/user, delayoverride, msg = TRUE, volume = 60)
 	var/turf/T = get_turf(src)
+	var/effective_delay = isnull(delayoverride) ? det_time : delayoverride
 	log_grenade(user, T) //Inbuilt admin procs already handle null users
 	if(user)
 		add_fingerprint(user)
@@ -210,7 +211,12 @@
 		landminemode.activate()
 		return
 	active = TRUE
-	addtimer(CALLBACK(src, PROC_REF(prime)), isnull(delayoverride)? det_time : delayoverride)
+	// BYOND 516 dispatch fix: PROC_REF(prime) expands to nameof(.proc/prime),
+	// a string. call(src, "prime") is dynamic dispatch and reaches the
+	// chem_grenade override. `.proc/prime` would resolve to the base typepath
+	// /obj/item/grenade/proc/prime which BYOND 516 calls statically, so the
+	// override (which actually does the chem reactions) is skipped. Bug F fix.
+	addtimer(CALLBACK(src, PROC_REF(prime)), effective_delay)
 
 /obj/item/grenade/chem_grenade/prime()
 	if(stage != GRENADE_READY)
