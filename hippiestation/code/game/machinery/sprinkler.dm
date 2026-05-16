@@ -7,7 +7,7 @@
 	icon_state = "sprinkler_off"
 	anchored = TRUE
 	max_integrity = 300
-	integrity_failure = 0.167
+	integrity_failure = 50
 	armor = list("melee" = 20, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 30, "bio" = 100, "rad" = 100, "fire" = 100, "acid" = 80)
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 	var/detecting = TRUE

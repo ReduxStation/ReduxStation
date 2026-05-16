@@ -1,4 +1,0 @@
-author: s950tx16wasr10
-delete-after: true
-changes:
-  - server: Caddy now serves HTTP/3 over UDP/443.

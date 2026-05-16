@@ -56,10 +56,6 @@
 //Called when another assembly acts on this one, var/radio will determine where it came from for wire calcs
 /obj/item/assembly/proc/pulsed(radio = FALSE)
 	if(wire_type & WIRE_RECEIVE)
-		// BYOND 516 dispatch fix: PROC_REF(activate) routes via dynamic dispatch
-		// and reaches the /obj/item/assembly/control override that iterates
-		// GLOB.machines to open the linked doors. With the old .proc/activate
-		// form, the base assembly/activate ran (a no-op for door buttons). Bug B fix.
 		INVOKE_ASYNC(src, PROC_REF(activate))
 	if(radio && (wire_type & WIRE_RADIO_RECEIVE))
 		INVOKE_ASYNC(src, PROC_REF(activate))

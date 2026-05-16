@@ -95,8 +95,7 @@
 		return WrapAdminProcCall(object, delegate, calling_arguments)
 	if (object == GLOBAL_PROC)
 		return call(delegate)(arglist(calling_arguments))
-	. = call(object, delegate)(arglist(calling_arguments))
-	return .
+	return call(object, delegate)(arglist(calling_arguments))
 
 //copy and pasted because fuck proc overhead
 /datum/callback/proc/InvokeAsync(...)
@@ -124,8 +123,7 @@
 		return WrapAdminProcCall(object, delegate, calling_arguments)
 	if (object == GLOBAL_PROC)
 		return call(delegate)(arglist(calling_arguments))
-	. = call(object, delegate)(arglist(calling_arguments))
-	return .
+	return call(object, delegate)(arglist(calling_arguments))
 
 
 /datum/callback_select
