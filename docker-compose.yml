@@ -193,8 +193,7 @@ services:
   # Decoupled from the game so no DMAPI TGS events are needed.
   serverinfo-updater:
     build:
-      context: .
-      dockerfile: docker/serverinfo-updater/Dockerfile
+      context: ./docker/serverinfo-updater
     restart: unless-stopped
     depends_on:
       - tgs
