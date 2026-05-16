@@ -1,8 +1,0 @@
-author: s950tx16wasr10
-delete-after: true
-changes:
-  - bugfix: SSTimer's bucketJoin no longer crashes with list-index-out-of-bounds
-      when a timer's timeToRun lands behind the bucket cursor. Cycling airlocks 
-      now complete both halves of the cycle, chem grenades detonate, and every 
-      other addtimer() callback that was silently being orphaned now fires 
-      correctly on the next eligible tick.
