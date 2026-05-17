@@ -14,7 +14,7 @@ GLOBAL_PROTECT(donators)
 	else
 		log_world("Failed to connect to database in load_donators(). Reverting to legacy system.")
 		WRITE_FILE(GLOB.world_game_log, "Failed to connect to database in load_donators(). Reverting to legacy system.")
-		var/list/lines = world.file2list("config/donators.txt")
+		var/list/lines = world.file2list("data/donators_legacy.txt")
 		for(var/line in lines)
 			if(!length(line))
 				continue

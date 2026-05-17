@@ -1,3 +1,8 @@
+# This file holds commented-out tgstation-style defaults. Real values for
+# the live server come from the per-server config repo
+# (https://github.com/ResurgenceStation/config) and are mounted at runtime
+# into Configuration/GameStaticFiles/config/comms.txt by TGS.
+
 ## Communication key for receiving data through world/Topic(), you don't want to give this out
 #COMMS_KEY default_pwd
 

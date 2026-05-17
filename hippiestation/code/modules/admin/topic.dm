@@ -166,8 +166,8 @@
 	else
 		GLOB.donators += "[ckey]"
 		makedonator = TRUE
-		if(isfile(file("config/donators.txt")))
-			text2file("[ckey]", "config/donators.txt")
+		if(isfile(file("data/donators_legacy.txt")))
+			text2file("[ckey]", "data/donators_legacy.txt")
 			message_admins("[ckey] has been made into a donator in donators.txt by [key_name_admin(usr)].")
 			log_admin("[key_name(usr)] made [ckey] into a donator in donators.txt")
 		else
@@ -201,15 +201,15 @@
 	else
 		GLOB.donators -= "[ckey]"
 		removedonator = TRUE
-		if(isfile(file("config/donators.txt")))
-			var/list/textlines = world.file2list("config/donators.txt")
+		if(isfile(file("data/donators_legacy.txt")))
+			var/list/textlines = world.file2list("data/donators_legacy.txt")
 			for(var/word in textlines)
 				if(!length(word))
 					continue
 				if(ckey == word)
 					textlines -= word
-			fdel("config/donators.txt")	//god bless this exists
-			text2file(jointext(textlines, "\n"), "config/donators.txt")
+			fdel("data/donators_legacy.txt")	//god bless this exists
+			text2file(jointext(textlines, "\n"), "data/donators_legacy.txt")
 			message_admins("[ckey] has been removed as a donator in donators.txt by [key_name_admin(usr)].")
 			log_admin("[key_name(usr)] removed [ckey] as a donator in donators.txt.")
 			qdel(textlines)

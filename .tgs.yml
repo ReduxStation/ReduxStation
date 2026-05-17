@@ -45,3 +45,15 @@ watchdog:
   health_check_seconds: 60
   log_output: true
   start_with_instance: true
+
+# Static files TGS exposes under Configuration/GameStaticFiles. `populate: true`
+# tells TGS to seed the directory from the repository's matching path on first
+# deploy (so config/ comes from this repo's commented-out defaults). The host
+# operator is expected to overwrite config/ with the real per-server config
+# from https://github.com/ResurgenceStation/config after the instance is
+# created. `data/` is created empty and used for runtime mutable state like
+# data/donators_legacy.txt and round caches.
+static_files:
+  - name: config
+    populate: true
+  - name: data

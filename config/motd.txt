@@ -1,5 +1,4 @@
-<!-- Most valid html will work in here, excluding images. -->
-
-<h1>Welcome to ResurgenceStation 13!</h1>
-
-<i>This server is running a /tg/station13 Git build.</i>
+<!-- Placeholder MOTD. The real motd lives in the per-server config repo
+     (https://github.com/ResurgenceStation/config, e.g. owo/motd.txt) and
+     is mounted at runtime into Configuration/GameStaticFiles/config/motd.txt
+     by TGS. Most valid HTML works here, excluding images. -->
