@@ -1,5 +1,11 @@
+# This file holds commented-out defaults for the downstream
+# (ResurgenceStation / hippiestation) config keys. Real values for
+# the live server come from the per-server config repo
+# (https://github.com/ResurgenceStation/config) and are mounted at runtime
+# into Configuration/GameStaticFiles/config/hippiestation_config.txt by TGS.
+
 #Determines what internet address to use.
-INTERNET_ADDRESS_TO_USE 0.0.0.0.0
+#INTERNET_ADDRESS_TO_USE 0.0.0.0
 
 ## Comment this out if you want to use the SQL based mentor system, the legacy system uses mentors.txt.
 ## You need to set up your database to use the SQL based system.
@@ -10,10 +16,10 @@ INTERNET_ADDRESS_TO_USE 0.0.0.0.0
 #MENTORS_MOBNAME_ONLY
 
 #Token provider URL (HTTP only because BYOND is garbage)
-TOKEN_GENERATOR http://127.0.0.1:9000/storeCkey.php
+#TOKEN_GENERATOR http://127.0.0.1:9000/storeCkey.php
 
 #Token consumer URL
-TOKEN_CONSUMER http://127.0.0.1:9000/byondLinker.php
+#TOKEN_CONSUMER http://127.0.0.1:9000/byondLinker.php
 
 #Uncomment this with a text to speech API if you wish to use one
 #TTS_API http://www.example.com/index.html?text=
@@ -35,4 +41,4 @@ TOKEN_CONSUMER http://127.0.0.1:9000/byondLinker.php
 #IPSTACK_API_KEY
 
 ## Enables the Replay/Demo subsystem. This is now an option because it has high cpu/ram usage.
-ENABLE_DEMO
+#ENABLE_DEMO

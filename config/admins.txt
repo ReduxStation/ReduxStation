@@ -1,8 +1,10 @@
-#List users here to be made admins with the format: ckey = rank name.
-#Ckey will be converted to ckey format, lowercase with no punctuation except '@'.
-#Rank name will match anything after ' = ' and has not format requirements.
-#Ranks will match to those with the same name in admin_ranks.txt, if a match isn't found the user won't be adminned.
-#If SQL-based admin loading is enabled, admins listed here will always be loaded first and will override any duplicate entries in the database.
-
-s950tx16wasr10 = Host
-Acesnti = Host
+# This file is a placeholder. The real admin list lives in the per-server
+# config repo (https://github.com/ResurgenceStation/config) and is mounted
+# at runtime into Configuration/GameStaticFiles/config/admins.txt by TGS.
+#
+# Format (one admin per line):
+#   ckey = rank name
+# where rank name is one of the ranks defined in admin_ranks.txt.
+# Ckeys are lowercase with no punctuation except '@'.
+#
+# This stub exists so local builds and CI don't fail to open the file.
