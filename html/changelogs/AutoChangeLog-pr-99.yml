@@ -1,0 +1,5 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - code_imp: removed leftover AUDIT log_game instrumentation from 
+      grenade/airlock/button/timer/callback paths

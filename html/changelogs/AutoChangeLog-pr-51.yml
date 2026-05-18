@@ -1,0 +1,4 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: in-progress rounds no longer appear in the day-level log listing

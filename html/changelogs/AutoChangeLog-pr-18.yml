@@ -1,0 +1,10 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - rscadd: the webmap viewer site now serves an interactive map with hover 
+      tooltips, click-to-pin, search, and category layer filters.
+  - code_imp: Raw map tile pyramid moves from the webmap host to a dedicated 
+      tiles host. Statbus and any other tile consumers now fetch from the tiles 
+      host.
+  - code_imp: Renderer now writes one objects.json per z-level with each tile's 
+      contents (type, name, desc, category) and a top-level manifest.json.

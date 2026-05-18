@@ -1,0 +1,9 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - code_imp: upgraded the tgstation-server DMAPI library from 5.2.3 to 7.4.0
+  - refactor: chat command Run procs now return /datum/tgs_message_content 
+      instead of raw strings
+  - server: clears the TGS panel "DMAPI interop version is less than 
+      tgstation-server's version (5.11.0)" warning, enables modern features like
+      TgsTriggerEvent

@@ -1,0 +1,5 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: restored the inherited reboot pipeline. Admin Reboot World > Regular
+      Restart should once again produce fade-to-title and client auto-reconnect.

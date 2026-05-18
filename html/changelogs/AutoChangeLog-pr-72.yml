@@ -1,0 +1,5 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: SSTimer.fire's grenade/airlock audit log line compiles under strict 
+      mode. Master deploys can resume.

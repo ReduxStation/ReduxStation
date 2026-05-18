@@ -1,0 +1,4 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: round logs persist on the public log site across deploy hot-swaps

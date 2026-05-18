@@ -1,0 +1,8 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - config: public log site caddy block now explicitly 404s any URL that does 
+      not match the canonical log layout (/, /YYYY, /YYYY/MM, /YYYY/MM/DD, 
+      /YYYY/MM/DD/round-N, /YYYY/MM/DD/round-N/<filename>). Probes for 
+      /admin.php, /.env, traversal attempts, etc. are turned away before 
+      touching the parser or file_server

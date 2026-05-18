@@ -1,0 +1,5 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: validation-launch config error logs no longer leak to the public log
+      site
