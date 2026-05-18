@@ -1,55 +1,61 @@
 name: Compile changelogs
 
+# Daily roll-up of the per-PR YAML changelog entries
+# (html/changelogs/AutoChangeLog-pr-*.yml) into the player-facing
+# html/changelog.html + .all_changelog.yml archive. Make_changelogs.yml
+# writes the per-PR YAMLs on every master push; this workflow compacts them.
+#
+# Uses the built-in GITHUB_TOKEN with `contents: write` instead of a
+# separately-provisioned ACTION_SECRET PAT. The trade-off vs a PAT push:
+# commits pushed by the default GITHUB_TOKEN do NOT trigger downstream
+# workflows. That's intentional here — we don't want a changelog
+# compile commit to retrigger Make_changelogs / TGS auto-deploy.
+
 on:
   schedule:
-  - cron: "0 0 * * *"
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   compile:
-    name: "Compile changelogs"
+    name: Compile changelogs
     runs-on: ubuntu-latest
     steps:
-      - name: "Check for CHANGELOG_ENABLER secret and pass true to output if it exists to be checked by later steps"
-        id: value_holder
-        env:
-          CHANGELOG_ENABLER: ${{ secrets.CHANGELOG_ENABLER }}
-        run: |
-          unset SECRET_EXISTS
-          if [ -n $CHANGELOG_ENABLER ]; then SECRET_EXISTS='true' ; fi
-          echo ::set-output name=CL_ENABLED::${SECRET_EXISTS}
-      - name: "Setup python"
-        if: steps.value_holder.outputs.CL_ENABLED
-        uses: actions/setup-python@v1
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          python-version: '3.x'
-      - name: "Install deps"
-        if: steps.value_holder.outputs.CL_ENABLED
+          fetch-depth: 25
+
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install deps
         run: |
           python -m pip install --upgrade pip
           python -m pip install pyyaml
-          sudo apt-get install  dos2unix
-      - name: "Checkout"
-        if: steps.value_holder.outputs.CL_ENABLED
-        uses: actions/checkout@v1
-        with:
-          fetch-depth: 25
-      - name: "Compile"
-        if: steps.value_holder.outputs.CL_ENABLED
+          sudo apt-get install -y dos2unix
+
+      - name: Compile
         run: |
           python tools/ss13_genchangelog.py html/changelog.html html/changelogs
-      - name: "Convert Lineendings"
-        if: steps.value_holder.outputs.CL_ENABLED
+
+      - name: Convert line endings
         run: |
           unix2dos html/changelogs/.all_changelog.yml
-      - name: Commit
-        if: steps.value_holder.outputs.CL_ENABLED
+
+      - name: Commit and push
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "Changelogs"
-          git pull origin master
-          git commit -m "Automatic changelog compile [ci skip]" -a || true
-      - name: "Push"
-        if: steps.value_holder.outputs.CL_ENABLED
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.ACTION_SECRET }}
+          if git diff --quiet html/changelog.html html/changelogs/.all_changelog.yml; then
+            echo "No changelog changes to commit."
+            exit 0
+          fi
+          git add html/changelog.html html/changelogs/.all_changelog.yml
+          git commit -m "Automatic changelog compile [ci skip]"
+          git push origin HEAD:master
