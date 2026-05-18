@@ -1,0 +1,19 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - code_imp: added a log-parser service to docker-compose.yml that fronts the 
+      public log site and scrubs IPs, CIDs, and admin-private content from game 
+      logs
+  - code_imp: caddy now reverse-proxies the public log site to the parser 
+      instead of file-serving the raw volume
+  - code_imp: added docker/log-parser/config.toml with the parser's runtime 
+      config (bind, log root, serverinfo URL)
+  - code_imp: 'added docker/log-parser/serverinfo.json as a {"servers": []} stub for
+      the ongoing-round protection until the DMAPI bridge in Phase 4 starts updating
+      it on round events'
+  - config: caddy gained an internal :8081 site serving the serverinfo stub on 
+      the docker network only
+  - server: requires the GHCR image 
+      ghcr.io/resurgencestation/public-log-parser:latest, built by 
+      ResurgenceStation/public-log-parser CI; depends on that fork's PR being 
+      merged first

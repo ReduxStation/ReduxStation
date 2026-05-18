@@ -1,0 +1,11 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: pressed access buttons now reset their sprite after activation, was 
+      staying stuck at the pressed visual under BYOND 516
+  - bugfix: airlocks opened via access buttons or other doorcontrol assemblies 
+      now animate their open/close cycle instead of just snapping state
+  - bugfix: signal handlers (RegisterSignal) and many callback paths now 
+      correctly hit subclass overrides on BYOND 516
+  - code_imp: "1259 .proc/X callsites converted to PROC_REF / TYPE_PROC_REF / GLOBAL_PROC_REF,
+      mirroring upstream tgstation's PR #71161 migration"

@@ -1,0 +1,7 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: TGS auto-deploy workflow now polls job outcomes and fails loudly 
+      when TGS-side jobs fail. Previously the workflow only checked HTTP status 
+      on the API call, so a stale testmerge or DM compile error would silently 
+      'succeed' in GitHub Actions while no actual deploy ever shipped.

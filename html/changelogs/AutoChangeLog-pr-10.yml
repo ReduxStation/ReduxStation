@@ -1,0 +1,11 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - code_imp: directory listings on the public log site now use caddy's built-in
+      file_server browse UI (the styled card grid) instead of the parser's bare 
+      unstyled list of links
+  - code_imp: file content keeps going through the public-log-parser for 
+      IP/CID/ADMINPRIVATE scrubbing and the per-file allowlist
+  - config: caddy gains a read-only mount of game_data at /srv/logs so it can 
+      serve directory listings; file content is still reverse-proxied so the 
+      scrubbing layer is preserved

@@ -1,0 +1,8 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: "PostCompile now scatters librust_g.so, libBSQL.so, and libquickwrite.so
+      into the game directory, the BYOND install bin directory, /usr/lib/i386-linux-gnu,
+      and /usr/local/lib. Without this, BYOND's call_ext fails to find some libs depending
+      on which lookup path it tries first, producing \"libbyond.so: undefined symbol:
+      <fn>\" runtimes"

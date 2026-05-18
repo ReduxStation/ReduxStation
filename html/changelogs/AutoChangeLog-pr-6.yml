@@ -1,0 +1,11 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - code_imp: added docs/tgs-deployment.md describing first-time TGS instance 
+      setup, per-deploy workflow, and common failure modes
+  - code_imp: added tools/tgs4_scripts/README.md clarifying that the folder is 
+      reference source for TGS event scripts that must be copied into the 
+      instance Configuration/EventScripts/ directory
+  - server: documents the BYOND 516.1680 pin, the PostCompile event script 
+      install step, and the manual tgs database creation needed when migrating 
+      an existing mariadb volume

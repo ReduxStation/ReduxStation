@@ -1,0 +1,7 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: All TGUI menu icons (RPD, vending machines, fridges, chem dispenser,
+      achievements, pills, paper, PDA, every spritesheet UI) now render the 
+      correct sprite for every entry instead of showing the first sprite 
+      repeated everywhere.

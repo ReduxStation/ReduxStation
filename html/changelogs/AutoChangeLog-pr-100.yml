@@ -1,0 +1,6 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - server: ongoing rounds are hidden from the public log site again. Now driven
+      by a sidecar that polls world.Topic ?status instead of in-game DMAPI 
+      events.

@@ -1,6 +1,4 @@
-author: blocks. As a result the daily changelog compile produced no entries and 
-  the in-game changelog popup body has been empty since the rename. This adds a 
-  single AutoChangeLog-style YAML covering the four user-visible buckets.
+author: s950tx16wasr10
 delete-after: true
 changes:
   - bugfix: Airlocks, computers, vending machines, alarms, and other machines no

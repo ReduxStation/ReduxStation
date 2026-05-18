@@ -1,0 +1,17 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - code_imp: SetRoundID and SetRoundEnd in code/controllers/subsystem/dbcore.dm
+      now emit DMAPI custom events (RoundStart, RoundEnd) so TGS-side hooks can 
+      react to round lifecycle without parsing log files
+  - code_imp: added tools/tgs4_scripts/RoundStart.sh and RoundEnd.sh that update
+      /tgstation/data/serverinfo.json with the active round's id, fed to the 
+      public-log-parser's ongoing-round-protection
+  - code_imp: PreStartup.sh now also seeds serverinfo.json with {"servers":[]} 
+      on first watchdog launch
+  - config: docker/caddy/Caddyfile :8081 internal site serves the live 
+      serverinfo.json from the game_data volume; the previously bind-mounted 
+      static stub at docker/log-parser/serverinfo.json has been removed
+  - server: in-progress rounds 404 on the public log site automatically; once a 
+      round finishes (declare_completion calls SetRoundEnd), the round dir 
+      becomes browseable

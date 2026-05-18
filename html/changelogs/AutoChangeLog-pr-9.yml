@@ -1,0 +1,7 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: log-parser now correctly serves round files. Previous config pointed
+      at /logs which is the game_data volume root (data dir contents like 
+      player_saves/, npc_saves/, etc), not the logs subdirectory. Every log file
+      404'd in production until corrected.

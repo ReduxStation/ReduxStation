@@ -1,0 +1,7 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: "Native libraries (rust_g, BSQL, quickwrite) on the TGS instance now refresh
+      on every deploy via a CI-built release artifact. Closes the gap that made PR
+      #61's rust_g dmi feature inert because the .so on disk never got updated. Same
+      propagation path now covers BSQL and quickwrite for future version bumps."
