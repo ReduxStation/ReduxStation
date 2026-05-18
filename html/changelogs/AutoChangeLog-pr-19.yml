@@ -1,7 +1,0 @@
-author: s950tx16wasr10
-delete-after: true
-changes:
-  - bugfix: in-progress round directory listings on the public log site now 
-      respect the ongoing-round protection. Previously caddy file_server served 
-      the directory of an active round even though the parser was blocking the 
-      files inside it

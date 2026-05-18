@@ -1,6 +1,0 @@
-author: s950tx16wasr10
-delete-after: true
-changes:
-  - code_imp: added .tgs.yml at the repo root so the TGS webpanel's Quick Start 
-      flow can pre-populate Repository, Engine, Deployment, and Server tab 
-      fields when creating a new instance from this repository

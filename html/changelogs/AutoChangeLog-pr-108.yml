@@ -1,5 +1,0 @@
-author: s950tx16wasr10
-delete-after: true
-changes:
-  - bugfix: The daily changelog-compile workflow now runs cleanly again instead 
-      of erroring on a missing token.

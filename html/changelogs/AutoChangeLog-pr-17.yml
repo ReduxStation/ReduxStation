@@ -1,7 +1,0 @@
-author: s950tx16wasr10
-delete-after: true
-changes:
-  - config: docker-compose.yml no longer bind-mounts ./config into the TGS 
-      instance directory. Game config is fully TGS-managed in 
-      Configuration/GameStaticFiles/config inside the tgs_instances volume, 
-      edited via the panel's Files & Scripts tab

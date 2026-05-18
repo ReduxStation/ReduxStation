@@ -1,5 +1,0 @@
-author: s950tx16wasr10
-delete-after: true
-changes:
-  - bugfix: changelog roll-up no longer captures inline cl prose as the author
-  - bugfix: backfilled per-PR changelog entries that the broken workflow missed

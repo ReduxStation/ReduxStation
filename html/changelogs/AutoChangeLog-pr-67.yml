@@ -1,6 +1,0 @@
-author: s950tx16wasr10
-delete-after: true
-changes:
-  - bugfix: autobuild_tgui CI now finds the locally-pinned webpack-cli@3 instead
-      of the runner's global webpack-cli@5+, so the build no longer crashes with
-      a Node-version syntax error.

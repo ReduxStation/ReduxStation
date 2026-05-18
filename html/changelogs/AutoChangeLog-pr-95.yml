@@ -1,7 +1,0 @@
-author: s950tx16wasr10
-delete-after: true
-changes:
-  - bugfix: removed the synchronous TGS event firing during world startup that 
-      may have been interfering with BYOND client auto-reconnect on admin Reboot
-      World. Reboot/restart/TGS DM code is now at the original 
-      post-DMAPI-upgrade state with no roundend or serverinfo additions.
