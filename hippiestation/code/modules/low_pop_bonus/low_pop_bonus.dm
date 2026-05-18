@@ -78,30 +78,53 @@ GLOBAL_VAR_INIT(low_pop_bonus_active, FALSE)
 		for(var/i in 1 to 4)
 			new part_path(parts_turf)
 
+// For a given existing stock part instance, return the tier-4 typepath that
+// replaces it. Returns null for non-stock_parts entries (circuit board, cable
+// coil, glass sheet) so they pass through untouched.
+/proc/low_pop_tier4_upgrade_path(obj/item/part)
+	if(istype(part, /obj/item/stock_parts/capacitor))
+		return /obj/item/stock_parts/capacitor/quadratic
+	if(istype(part, /obj/item/stock_parts/scanning_module))
+		return /obj/item/stock_parts/scanning_module/triphasic
+	if(istype(part, /obj/item/stock_parts/manipulator))
+		return /obj/item/stock_parts/manipulator/femto
+	if(istype(part, /obj/item/stock_parts/micro_laser))
+		return /obj/item/stock_parts/micro_laser/quadultra
+	if(istype(part, /obj/item/stock_parts/matter_bin))
+		return /obj/item/stock_parts/matter_bin/bluespace
+	if(istype(part, /obj/item/stock_parts/cell))
+		return /obj/item/stock_parts/cell/bluespace
+	return null
+
+// Swap every stock_parts entry in M.component_parts with its tier-4 equivalent.
+// Preserves circuit board / cable coil / glass sheet so deconstruction still
+// works. New parts are created at null loc so they live in component_parts only
+// and never get dumped when the machine opens. Returns count of parts swapped.
+/proc/low_pop_upgrade_machine_parts(obj/machinery/M)
+	var/list/new_parts = list()
+	var/swapped = 0
+	for(var/obj/item/part in M.component_parts)
+		var/upgrade_path = low_pop_tier4_upgrade_path(part)
+		if(upgrade_path)
+			new_parts += new upgrade_path(null)
+			qdel(part)
+			swapped++
+		else
+			new_parts += part
+	M.component_parts = new_parts
+	M.RefreshParts()
+	return swapped
+
 /proc/upgrade_low_pop_cloners()
-	var/list/tier4_parts = list(
-		/obj/item/stock_parts/capacitor/quadratic,
-		/obj/item/stock_parts/scanning_module/triphasic,
-		/obj/item/stock_parts/manipulator/femto,
-		/obj/item/stock_parts/micro_laser/quadultra,
-		/obj/item/stock_parts/matter_bin/bluespace,
-		/obj/item/stock_parts/cell/bluespace,
-	)
 	var/pods = 0
 	for(var/obj/machinery/clonepod/CP in GLOB.machines)
-		QDEL_LIST(CP.component_parts)
-		for(var/part_path in tier4_parts)
-			CP.component_parts += new part_path(CP)
-		CP.RefreshParts()
-		pods++
+		if(low_pop_upgrade_machine_parts(CP))
+			pods++
 	var/scanners = 0
 	for(var/obj/machinery/dna_scannernew/DS in GLOB.machines)
-		QDEL_LIST(DS.component_parts)
-		for(var/part_path in tier4_parts)
-			DS.component_parts += new part_path(DS)
-		DS.RefreshParts()
-		scanners++
-	log_game("LOW_POP_BONUS: upgraded [pods] clonepod(s) and [scanners] DNA scanner(s) with tier-4 parts")
+		if(low_pop_upgrade_machine_parts(DS))
+			scanners++
+	log_game("LOW_POP_BONUS: upgraded [pods] clonepod(s) and [scanners] DNA scanner(s) to tier-4 stock parts")
 
 /proc/boost_low_pop_research()
 	var/before = SSresearch.single_server_income[TECHWEB_POINT_TYPE_GENERIC]
