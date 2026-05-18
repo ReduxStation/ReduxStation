@@ -134,7 +134,8 @@ GLOBAL_PROTECT(admin_verbs_server)
 	/client/proc/adminchangemap,
 	/client/proc/panicbunker,
 	/client/proc/toggle_hub,
-	/client/proc/mentor_memo /* hippie -- handle mentor memos */
+	/client/proc/mentor_memo, /* hippie -- handle mentor memos */
+	/client/proc/cmd_admin_force_low_pop_bonus /* hippie -- force low-pop bonus */
 	)
 GLOBAL_LIST_INIT(admin_verbs_debug, world.AVerbsDebug())
 GLOBAL_PROTECT(admin_verbs_debug)

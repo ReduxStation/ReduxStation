@@ -6,8 +6,9 @@
 //   * Stack drops at fixed coords (uranium, titanium, bluespace crystals,
 //     bluespace miner boards, tier-4 stock parts).
 //   * Diamond and plasma sheets dropped into a pre-existing crate.
-//   * Both clonepods on the station get their component_parts swapped to the
-//     tier-3 set so their stats RefreshParts to upgraded values.
+//   * Both clonepods and every DNA scanner on the station get their
+//     component_parts swapped to the tier-4 (bluespace) set so their stats
+//     RefreshParts to maximum values.
 //   * SSresearch points-per-second multiplied by 1.5.
 //   * Every department starting budget doubled.
 //   * Every job paycheck tripled (single edit on /datum/job.paycheck so all
@@ -78,22 +79,29 @@ GLOBAL_VAR_INIT(low_pop_bonus_active, FALSE)
 			new part_path(parts_turf)
 
 /proc/upgrade_low_pop_cloners()
-	var/list/tier3_parts = list(
-		/obj/item/stock_parts/capacitor/super,
-		/obj/item/stock_parts/scanning_module/phasic,
-		/obj/item/stock_parts/manipulator/pico,
-		/obj/item/stock_parts/micro_laser/ultra,
-		/obj/item/stock_parts/matter_bin/super,
-		/obj/item/stock_parts/cell/super,
+	var/list/tier4_parts = list(
+		/obj/item/stock_parts/capacitor/quadratic,
+		/obj/item/stock_parts/scanning_module/triphasic,
+		/obj/item/stock_parts/manipulator/femto,
+		/obj/item/stock_parts/micro_laser/quadultra,
+		/obj/item/stock_parts/matter_bin/bluespace,
+		/obj/item/stock_parts/cell/bluespace,
 	)
-	var/upgraded = 0
+	var/pods = 0
 	for(var/obj/machinery/clonepod/CP in GLOB.machines)
 		QDEL_LIST(CP.component_parts)
-		for(var/part_path in tier3_parts)
+		for(var/part_path in tier4_parts)
 			CP.component_parts += new part_path(CP)
 		CP.RefreshParts()
-		upgraded++
-	log_game("LOW_POP_BONUS: upgraded [upgraded] clonepod(s) with tier-3 parts")
+		pods++
+	var/scanners = 0
+	for(var/obj/machinery/dna_scannernew/DS in GLOB.machines)
+		QDEL_LIST(DS.component_parts)
+		for(var/part_path in tier4_parts)
+			DS.component_parts += new part_path(DS)
+		DS.RefreshParts()
+		scanners++
+	log_game("LOW_POP_BONUS: upgraded [pods] clonepod(s) and [scanners] DNA scanner(s) with tier-4 parts")
 
 /proc/boost_low_pop_research()
 	var/before = SSresearch.single_server_income[TECHWEB_POINT_TYPE_GENERIC]
