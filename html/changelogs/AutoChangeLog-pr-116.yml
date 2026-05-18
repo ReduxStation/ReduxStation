@@ -1,0 +1,8 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - rscadd: 'Atmospherics simulator console in the toxins lab. Two modes: TTV Bomb
+      (preview tank transfer valve bombs without detonating one) and Gas Reactions
+      (sandbox single-tank gas reactions). Trash can at the east wall of toxins is
+      replaced with two reinforced tables, the console sits to the left of the existing
+      east camera.'
