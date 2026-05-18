@@ -1,0 +1,17 @@
+# Changelog backfill for the rebrand work that landed via direct master
+# pushes (not via PR), plus the PR #58 cherry-pick that was missed
+# during the original "overwrite master to deploy/clean-rebuild golden
+# state" (PR #106).
+#
+# This file follows the same schema as AutoChangeLog-pr-*.yml so the
+# daily compile_changelogs job folds it into .all_changelog.yml and
+# the in-game changelog popup. delete-after deletes the file after the
+# entries are absorbed, just like the auto-generated ones.
+
+author: s950tx16wasr10
+delete-after: True
+changes:
+  - bugfix: Airlocks, computers, vending machines, alarms, and other machines no longer instantly break and electrify themselves after a single melee hit. (integrity_failure migration from absolute HP to fraction of max integrity.)
+  - rscadd: Server is now ReduxStation — flipped every player-visible string from ResurgenceStation / Nova HippieStation / HippieStation to ReduxStation. Internal upstream attribution (folder names, code comments, map identifier) is preserved.
+  - server: The site moved from owo.fm to reduxstation.com. The TGS control panel is at tgs.reduxstation.com; statbus at stats.reduxstation.com; logs at logs.reduxstation.com; the webmap at map.reduxstation.com.
+  - tgs: Enabled the bundled tgstation-server web control panel at /app/.
