@@ -1,8 +1,8 @@
 ## ReduxStation 13[![GitHub forks](https://img.shields.io/github/forks/ReduxStation/ReduxStation.svg?style=social&label=Fork)](https://github.com/ReduxStation/ReduxStation#fork-destination-box)
 
-**Website:** http://www.owo.fm <BR>
+**Website:** http://www.reduxstation.com <BR>
 **Code:** https://github.com/ReduxStation/ReduxStation <BR>
-**Wiki** https://wiki.owo.fm/index.php?title=Main_Page <BR>
+**Wiki** https://wiki.reduxstation.com/index.php?title=Main_Page <BR>
 **Discord:** https://discord.gg/wUqCpBH7Ua <BR>
 
 [![Build Status](https://travis-ci.org/ReduxStation/ReduxStation.png)](https://travis-ci.org/ReduxStation/ReduxStation/)
@@ -15,16 +15,16 @@ This is the Github page for the ReduxStation codebase, used on the Space Station
 Because of this, the repository inherits /tg/station's licensing, among other things.
 For a full guide on how to set up your own Space Station 13 server, please see the [/tg/station README.md](https://github.com/tgstation/tgstation/blob/master/README.md).
 If you would like to contribute to this codebase, first take a look at the [CONTRIBUTING.md](.github/CONTRIBUTING.md).
-**Website:** https://www.owo.fm
+**Website:** https://www.reduxstation.com
 **Code:** https://github.com/ReduxStation/ReduxStation
-**Wiki** https://wiki.owo.fm/
+**Wiki** https://wiki.reduxstation.com/
 
 ## DOWNLOADING
 
-There are a number of ways to download the source code. Some are described here, an alternative all-inclusive guide is also located at https://wiki.owo.fm/index.php?title=Downloading_the_source_code
+There are a number of ways to download the source code. Some are described here, an alternative all-inclusive guide is also located at https://wiki.reduxstation.com/index.php?title=Downloading_the_source_code
 
 Option 1:
-Follow this: https://wiki.owo.fm/index.php?title=Setting_up_git
+Follow this: https://wiki.reduxstation.com/index.php?title=Setting_up_git
 
 Option 2: Download the source code as a zip by clicking the ZIP button in the
 code tab of https://github.com/ReduxStation/ReduxStation
