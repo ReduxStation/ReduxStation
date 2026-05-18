@@ -28,7 +28,11 @@ from pathlib import Path
 from ruamel.yaml import YAML
 from github import Github, InputGitAuthor
 
-CL_BODY = re.compile(r":cl:(.+)?\r?\n((.|\n|\r)*?)\r?\n\/:cl:", re.MULTILINE)
+# Anchored to line starts so inline `:cl:` prose in a PR description
+# (e.g. "PRs without :cl: blocks ...") does not get parsed as a block —
+# previously the unanchored form captured trailing prose as the author
+# string, which corrupted .all_changelog.yml (see PR #109 incident).
+CL_BODY = re.compile(r"^:cl:[ \t]*(.+)?\r?\n((?:.|\n|\r)*?)\r?\n^/:cl:[ \t]*$", re.MULTILINE)
 CL_SPLIT = re.compile(r"(^\w+):\s+(\w.+)", re.MULTILINE)
 
 git_email = os.getenv("GIT_EMAIL")
