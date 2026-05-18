@@ -1,7 +1,0 @@
-author: s950tx16wasr10
-delete-after: true
-changes:
-  - code_imp: added .github/workflows/dmapi-updater.yml that opens a pull 
-      request bumping code/modules/tgs and code/__DEFINES/tgs.dm to the latest 
-      tgstation/tgstation-server DMAPI release. Runs weekly on a schedule plus 
-      manual workflow_dispatch

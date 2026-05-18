@@ -1,6 +1,0 @@
-author: s950tx16wasr10
-delete-after: true
-changes:
-  - bugfix: The daily changelog roll-up workflow no longer silently drops the 
-      changelog when another workflow lands a commit on master between its 
-      checkout and push.
