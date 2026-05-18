@@ -9,7 +9,7 @@ name: TGS auto-deploy
 # stay testable via TGS's "Test Merge" feature on the panel.
 #
 # Required repository secrets:
-#   TGS_URL           -- public HTTPS base, e.g. https://panel.reduxstation.com
+#   TGS_URL           -- public HTTPS base, e.g. https://tgs.reduxstation.com
 #   TGS_USERNAME      -- TGS user with InstanceManager + DreamMaker rights
 #   TGS_PASSWORD      -- password for that user
 #   TGS_INSTANCE_ID   -- numeric instance id (visible in the panel URL)
