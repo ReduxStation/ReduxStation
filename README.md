@@ -1,40 +1,40 @@
-## ResurgenceStation 13[![GitHub forks](https://img.shields.io/github/forks/ResurgenceStation/ResurgenceStation.svg?style=social&label=Fork)](https://github.com/ResurgenceStation/ResurgenceStation#fork-destination-box)
+## ReduxStation 13[![GitHub forks](https://img.shields.io/github/forks/ReduxStation/ReduxStation.svg?style=social&label=Fork)](https://github.com/ReduxStation/ReduxStation#fork-destination-box)
 
 **Website:** http://www.owo.fm <BR>
-**Code:** https://github.com/ResurgenceStation/ResurgenceStation <BR>
+**Code:** https://github.com/ReduxStation/ReduxStation <BR>
 **Wiki** https://wiki.owo.fm/index.php?title=Main_Page <BR>
 **Discord:** https://discord.gg/wUqCpBH7Ua <BR>
 
-[![Build Status](https://travis-ci.org/ResurgenceStation/ResurgenceStation.png)](https://travis-ci.org/ResurgenceStation/ResurgenceStation/)
-[![Percentage of issues still open](https://isitmaintained.com/badge/open/ResurgenceStation/ResurgenceStation.svg)](https://isitmaintained.com/project/ResurgenceStation/ResurgenceStation "Percentage of issues still open") [![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/ResurgenceStation/ResurgenceStation.svg)](https://isitmaintained.com/project/ResurgenceStation/ResurgenceStation "Average time to resolve an issue") ![Coverage](https://img.shields.io/badge/coverage---777%25-red.svg)
+[![Build Status](https://travis-ci.org/ReduxStation/ReduxStation.png)](https://travis-ci.org/ReduxStation/ReduxStation/)
+[![Percentage of issues still open](https://isitmaintained.com/badge/open/ReduxStation/ReduxStation.svg)](https://isitmaintained.com/project/ReduxStation/ReduxStation "Percentage of issues still open") [![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/ReduxStation/ReduxStation.svg)](https://isitmaintained.com/project/ReduxStation/ReduxStation "Average time to resolve an issue") ![Coverage](https://img.shields.io/badge/coverage---777%25-red.svg)
 [![forthebadge](https://forthebadge.com/images/badges/built-with-resentment.svg)](https://forthebadge.com) [![forthebadge](https://forthebadge.com/images/badges/contains-technical-debt.svg)](https://forthebadge.com) [![forinfinityandbyond](https://user-images.githubusercontent.com/5211576/29499758-4efff304-85e6-11e7-8267-62919c3688a9.gif)](https://www.reddit.com/r/SS13/comments/5oplxp/what_is_the_main_problem_with_byond_as_an_engine/dclbu1a)
 
 ## ABOUT
 
-This is the Github page for the ResurgenceStation codebase, used on the Space Station 13 server. This codebase is built off the work of many different servers, primarily that of /tg/station 13.
+This is the Github page for the ReduxStation codebase, used on the Space Station 13 server. This codebase is built off the work of many different servers, primarily that of /tg/station 13.
 Because of this, the repository inherits /tg/station's licensing, among other things.
 For a full guide on how to set up your own Space Station 13 server, please see the [/tg/station README.md](https://github.com/tgstation/tgstation/blob/master/README.md).
 If you would like to contribute to this codebase, first take a look at the [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 **Website:** https://www.owo.fm
-**Code:** https://github.com/ResurgenceStation/ResurgenceStation
+**Code:** https://github.com/ReduxStation/ReduxStation
 **Wiki** https://wiki.owo.fm/
 
 ## DOWNLOADING
 
-There are a number of ways to download the source code. Some are described here, an alternative all-inclusive guide is also located at https://wiki.hippiestation.com/index.php?title=Downloading_the_source_code
+There are a number of ways to download the source code. Some are described here, an alternative all-inclusive guide is also located at https://wiki.owo.fm/index.php?title=Downloading_the_source_code
 
 Option 1:
 Follow this: https://wiki.owo.fm/index.php?title=Setting_up_git
 
 Option 2: Download the source code as a zip by clicking the ZIP button in the
-code tab of https://github.com/ResurgenceStation/ResurgenceStation
+code tab of https://github.com/ReduxStation/ReduxStation
 (note: this will use a lot of bandwidth if you wish to update and is a lot of
 hassle if you want to make any changes at all, so it's not recommended.)
 
 Option 3: Use our docker image that tracks the master branch (See commits for build status. Again, same caveats as option 2)
 
 ```
-docker run -d -p <your port>:1337 -v /path/to/your/config:/resurgencestation/config -v /path/to/your/data:/resurgencestation/data resurgencestation/resurgencestation <dream daemon options i.e. -public or -params>
+docker run -d -p <your port>:1337 -v /path/to/your/config:/reduxstation/config -v /path/to/your/data:/reduxstation/data reduxstation/reduxstation <dream daemon options i.e. -public or -params>
 ```
 
 ## INSTALLATION
@@ -97,7 +97,7 @@ recompile the game.  Once you start the server up again, you should be running
 the new version.
 
 ## MAPS
-Resurgence Station currently comes equipped with five maps.
+ReduxStation currently comes equipped with five maps.
 * [Hippie BoxStation (default)](https://tgstation13.org/wiki/Boxstation)
 * [BoxStation](https://tgstation13.org/wiki/Boxstation)
 * [MetaStation](https://tgstation13.org/wiki/MetaStation)

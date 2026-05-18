@@ -15,7 +15,7 @@ version: 1
 # declared as a submodule but the gitlink is not committed in master, so
 # leave update_submodules off.
 repo:
-  remote_url: https://github.com/ResurgenceStation/ResurgenceStation
+  remote_url: https://github.com/ReduxStation/ReduxStation
   reference: master
   update_submodules: false
 
@@ -50,7 +50,7 @@ watchdog:
 # tells TGS to seed the directory from the repository's matching path on first
 # deploy (so config/ comes from this repo's commented-out defaults). The host
 # operator is expected to overwrite config/ with the real per-server config
-# from https://github.com/ResurgenceStation/config after the instance is
+# from https://github.com/ReduxStation/config after the instance is
 # created. `data/` is created empty and used for runtime mutable state like
 # data/donators_legacy.txt and round caches.
 static_files:

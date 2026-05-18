@@ -81,7 +81,7 @@
 	set hidden = 1
 	if(alert("This will open Statbus in your browser. Are you sure?",,"Yes","No")!="Yes")
 		return
-	DIRECT_OUTPUT(src, link("https://statbus.hippiestation.com"))
+	DIRECT_OUTPUT(src, link("https://stats.owo.fm"))
 	return
 
 /client/verb/changelog()

@@ -61,7 +61,7 @@ jobs:
           # TGS requires an Api header naming the client API version. Pick a
           # 10.x line; the server negotiates compat. Bump if TGS rejects it.
           API_HEADER="Tgstation.Server.Api/10.10.0"
-          UA_HEADER="ResurgenceStation-AutoDeploy/1.0"
+          UA_HEADER="ReduxStation-AutoDeploy/1.0"
 
           # Strip any trailing slash on TGS_URL so we can append paths cleanly.
           BASE="${TGS_URL%/}"
