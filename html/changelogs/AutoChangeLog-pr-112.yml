@@ -1,0 +1,9 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - rscadd: low-pop bonus package. At roundstart, if active players < 7, the 
+      station gets a one-shot supply drop (uranium, titanium, bluespace 
+      crystals, diamond, plasma, bluespace miner boards, tier-4 stock parts) 
+      plus tier-3 cloners, 1.5x R&D speed, doubled department budgets, and 
+      tripled paychecks.
+  - admin: new "Force Low-Pop Bonus" verb under the Server category for testing.
