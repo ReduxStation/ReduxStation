@@ -5,3 +5,4 @@
 	load_donators()
 	init_sprite_accessory_subtypes(/datum/sprite_accessory/screen, GLOB.ipc_screens_list, roundstart = TRUE)
 	initialize_global_loadout_items()
+	register_low_pop_bonus()
