@@ -35711,7 +35711,7 @@
 /obj/machinery/atmospherics/pipe/simple/supply/hidden/layer1{
 	dir = 1
 	},
-/obj/structure/closet/crate/bin,
+/obj/structure/table/reinforced,
 /turf/open/floor/plasteel/white,
 /area/science/mixing)
 "bYV" = (
@@ -35719,6 +35719,7 @@
 /obj/machinery/atmospherics/pipe/simple/supply/hidden/layer1{
 	dir = 1
 	},
+/obj/structure/table/reinforced,
 /obj/machinery/light{
 	dir = 4
 	},
@@ -51229,6 +51230,7 @@
 	network = list("MiniSat");
 	start_active = 1
 	},
+/obj/machinery/computer/atmos_sim,
 /turf/open/floor/plasteel/white,
 /area/science/mixing)
 "gBb" = (
