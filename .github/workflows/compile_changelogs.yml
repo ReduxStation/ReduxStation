@@ -50,6 +50,7 @@ jobs:
 
       - name: Commit and push
         run: |
+          set -euo pipefail
           git config --local user.email "action@github.com"
           git config --local user.name "Changelogs"
           if git diff --quiet html/changelog.html html/changelogs/.all_changelog.yml; then
@@ -58,4 +59,17 @@ jobs:
           fi
           git add html/changelog.html html/changelogs/.all_changelog.yml
           git commit -m "Automatic changelog compile [ci skip]"
-          git push origin HEAD:master
+          # Master can move between the workflow's checkout and the push (e.g.
+          # if another workflow merges concurrently). Rebase + retry handles
+          # that race; without it the push is rejected and the daily compile
+          # silently fails.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:master; then
+              exit 0
+            fi
+            echo "Push attempt $attempt rejected — fetching + rebasing master and retrying..."
+            git fetch origin master
+            git rebase origin/master
+          done
+          echo "Push still failing after 3 retries; giving up."
+          exit 1
