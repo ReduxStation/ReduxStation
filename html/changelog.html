@@ -53,20 +53,14 @@
 		-->
 		<div class="commit sansserif">
 
-			<h2 class="date">18 May 2026</h2>
-			<h3 class="author">blocks. As a result the daily changelog compile produced no entries and the in-game changelog popup body has been empty since the rename. This adds a single AutoChangeLog-style YAML covering the four user-visible buckets. updated:</h3>
-			<ul class="changes bgimages16">
-				<li class="bugfix">Airlocks, computers, vending machines, alarms, and other machines no longer instantly break and electrify themselves after a single melee hit.</li>
-				<li class="rscadd">Server is now ReduxStation. Player-visible strings flipped from ResurgenceStation / Nova HippieStation / HippieStation to ReduxStation. Internal upstream attribution (folder names, map identifier) preserved.</li>
-				<li class="server">Site moved from owo.fm to reduxstation.com. TGS panel at tgs.reduxstation.com; statbus at stats.reduxstation.com; logs at logs.reduxstation.com; webmap at map.reduxstation.com.</li>
-				<li class="tgs">Enabled the bundled tgstation-server web control panel at /app/.</li>
-			</ul>
+			<h2 class="date">19 May 2026</h2>
 			<h3 class="author">s950tx16wasr10 updated:</h3>
 			<ul class="changes bgimages16">
-				<li class="bugfix">Airlocks, computers, vending machines, alarms, and other machines no longer instantly break and electrify themselves after a single melee hit. (integrity_failure migration from absolute HP to fraction of max integrity.)</li>
-				<li class="rscadd">Server is now ReduxStation — flipped every player-visible string from ResurgenceStation / Nova HippieStation / HippieStation to ReduxStation. Internal upstream attribution (folder names, code comments, map identifier) is preserved.</li>
-				<li class="server">The site moved from owo.fm to reduxstation.com. The TGS control panel is at tgs.reduxstation.com; statbus at stats.reduxstation.com; logs at logs.reduxstation.com; the webmap at map.reduxstation.com.</li>
-				<li class="tgs">Enabled the bundled tgstation-server web control panel at /app/.</li>
+				<li class="rscadd">Atmospherics simulator console in the toxins lab. Two modes: TTV Bomb (preview tank transfer valve bombs without detonating one) and Gas Reactions (sandbox single-tank gas reactions). Trash can at the east wall of toxins is replaced with two reinforced tables, the console sits to the left of the existing east camera.</li>
+				<li class="rscadd">low-pop bonus package. At roundstart, if active players < 7, the station gets a one-shot supply drop (uranium, titanium, bluespace crystals, diamond, plasma, bluespace miner boards, tier-4 stock parts) plus tier-3 cloners, 1.5x R&D speed, doubled department budgets, and tripled paychecks.</li>
+				<li class="admin">new "Force Low-Pop Bonus" verb under the Server category for testing.</li>
+				<li class="bugfix">low-pop bonus DNA scanner and cloner pod parts now actually upgrade in place. Previously the upgraded parts were placed in the machine's contents, which made them spill out of the scanner when opened, and the wholesale parts wipe also deleted the circuit board, cable coil, and glass sheet the machine needs for deconstruction.</li>
+				<li class="tweak">server status now reports as "ReduxStation" instead of "/tg/ Station 13"</li>
 			</ul>
 		</div>
 
