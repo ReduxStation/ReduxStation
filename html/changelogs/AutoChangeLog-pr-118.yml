@@ -1,0 +1,4 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - balance: Lavaland bombs can now go up to 10x the station cap instead of 2x.
