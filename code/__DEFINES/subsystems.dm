@@ -74,6 +74,7 @@
 #define INIT_ORDER_DEFAULT			0
 #define INIT_ORDER_AIR				-1
 #define INIT_ORDER_AIR_TURFS 		-2
+#define INIT_ORDER_TTS				-3
 #define INIT_ORDER_ASSETS			-4
 #define INIT_ORDER_ICON_SMOOTHING	-5
 #define INIT_ORDER_OVERLAY			-6
@@ -112,6 +113,7 @@
 #define FIRE_PRIORITY_AIR_TURFS	40
 #define FIRE_PRIORITY_DEFAULT		50
 #define FIRE_PRIORITY_PARALLAX		65
+#define FIRE_PRIORITY_TTS			90
 #define FIRE_PRIORITY_MOBS			100
 #define FIRE_PRIORITY_TGUI			110
 #define FIRE_PRIORITY_TICKER		200
@@ -121,6 +123,13 @@
 #define FIRE_PRIORITY_OVERLAYS		500
 #define FIRE_PRIORITY_EXPLOSIONS	666
 #define FIRE_PRIORITY_INPUT			1000 // This must always always be the max highest priority. Player input must never be lost.
+
+// Subsystem Initialize() return value codes. Compatibility with the tg convention
+// so subsystem code copies more cleanly across forks. Master does not consume these
+// today, they are purely informational.
+#define SS_INIT_NO_NEED -1
+#define SS_INIT_FAILURE 0
+#define SS_INIT_SUCCESS 1
 
 // SS runlevels
 

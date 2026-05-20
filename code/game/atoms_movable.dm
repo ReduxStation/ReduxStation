@@ -18,6 +18,14 @@
 	var/verb_whisper = "whispers"
 	var/verb_yell = "yells"
 	var/speech_span
+	/// TTS voice name (matches a value in SStts.available_speakers). Null = no TTS.
+	var/voice
+	/// Pitch shift in semitones for TTS playback, -12 to +12. 0 = no shift.
+	var/pitch = 0
+	/// Optional ffmpeg filter string appended on top of the base TTS audio. Empty = none.
+	var/voice_filter = ""
+	/// When TRUE, this mob's TTS gets the silicon convolution chain (Phase 3+).
+	var/tts_silicon_voice_effect = FALSE
 	var/inertia_dir = 0
 	var/atom/inertia_last_loc
 	var/inertia_moving = 0

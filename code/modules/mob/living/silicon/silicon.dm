@@ -55,6 +55,11 @@
 		diag_hud.add_to_hud(src)
 	diag_hud_set_status()
 	diag_hud_set_health()
+	// Silicons get a random TTS voice on spawn. tts_silicon_voice_effect = TRUE flags
+	// them for the Phase 3 silicon convolution chain; Phase 1 just plays unfiltered.
+	if(SStts && SStts.tts_enabled)
+		voice = SStts.random_tts_voice()
+	tts_silicon_voice_effect = TRUE
 
 /mob/living/silicon/med_hud_set_health()
 	return //we use a different hud
