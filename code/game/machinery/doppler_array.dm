@@ -92,8 +92,13 @@
 	if(devastation_range < orig_dev_range || heavy_impact_range < orig_heavy_range || light_impact_range < orig_light_range)
 		messages += "Theoretical: Epicenter radius: [orig_dev_range]. Outer radius: [orig_heavy_range]. Shockwave radius: [orig_light_range]."
 
-		for(var/message in messages)
-			say(message)
+	// Announce every detected explosion, capped or not. Indentation bug:
+	// this loop was previously inside the `if (capped)` branch, so the
+	// doppler array only spoke for capped bombs and was silent on every
+	// uncapped detonation. Matches upstream tgstation
+	// (code/modules/research/ordnance/doppler_array.dm).
+	for(var/message in messages)
+		say(message)
 	LAZYADD(message_log, messages.Join(" "))
 	return TRUE
 
