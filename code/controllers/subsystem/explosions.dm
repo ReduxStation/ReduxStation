@@ -339,7 +339,12 @@ SUBSYSTEM_DEF(explosions)
 	if(GLOB.Debug2)
 		log_world("## DEBUG: Explosion([x0],[y0],[z0])(d[devastation_range],h[heavy_impact_range],l[light_impact_range]): Took [took] seconds.")
 
-		SEND_GLOBAL_SIGNAL(COMSIG_GLOB_EXPLOSION, epicenter, devastation_range, heavy_impact_range, light_impact_range, took, orig_dev_range, orig_heavy_range, orig_light_range)
+	// Always fire the explosion signal so listeners (tachyon-doppler array,
+	// bomb_hood / hardsuit explosion sensors, research point handlers, etc.)
+	// react to every detonation, not just ones happening while an admin has
+	// toggled DebugGame. Matches upstream tgstation, which has this call at
+	// proc-body indent. Indentation slip here was why ordnance went silent.
+	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_EXPLOSION, epicenter, devastation_range, heavy_impact_range, light_impact_range, took, orig_dev_range, orig_heavy_range, orig_light_range)
 
 
 /datum/controller/subsystem/explosions/proc/GatherSpiralTurfs(range, turf/epicenter)
