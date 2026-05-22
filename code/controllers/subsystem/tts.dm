@@ -123,12 +123,17 @@ SUBSYSTEM_DEF(tts)
 /datum/controller/subsystem/tts/proc/play_tts(target, list/listeners, sound/audio, sound/audio_blips, datum/language/language, range = 7, volume_offset = 0)
 	var/turf/turf_source = get_turf(target)
 	if(!turf_source)
+		log_world("TTS play_tts: target [target] has no turf, bailing.")
 		return
 
+	log_world("TTS play_tts: target=[target] file=[audio ? audio.file : "null"] listeners=[length(listeners)] range=[range]")
 	var/channel = open_sound_channel()
-	for(var/atom/movable/hearer in listeners | SSmobs.dead_players_by_zlevel[turf_source.z])
+	var/list/combined = listeners | SSmobs.dead_players_by_zlevel[turf_source.z]
+	log_world("TTS play_tts: combined listener count after dead-player union=[length(combined)]")
+	for(var/atom/movable/hearer in combined)
 		var/mob/listening_mob = hearer.get_listening_mob()
 		if(isnull(listening_mob))
+			log_world("TTS play_tts: skipped hearer [hearer] ([hearer.type]) — get_listening_mob returned null")
 			continue
 		if(QDELETED(listening_mob))
 			stack_trace("TTS tried to play a sound to a deleted mob.")
@@ -140,8 +145,11 @@ SUBSYSTEM_DEF(tts)
 		var/datum/language_holder/holder = listening_mob.get_language_holder()
 		var/audio_to_use = audio
 		if(language && holder && !holder.has_language(language))
+			log_world("TTS play_tts: [listening_mob] skipped — does not know language [language]")
 			continue
-		if(get_dist(hearer, turf_source) <= range)
+		var/dist = get_dist(hearer, turf_source)
+		if(dist <= range)
+			log_world("TTS play_tts: calling playsound_local on [listening_mob] vol=[sound_volume] dist=[dist] channel=[channel] client=[listening_mob.client ? "yes" : "NO"]")
 			// Our playsound_local: (turf_source, soundin, vol, vary, frequency, falloff, channel, pressure_affected, sound/S)
 			listening_mob.playsound_local(
 				turf_source,
@@ -154,6 +162,8 @@ SUBSYSTEM_DEF(tts)
 				TRUE,
 				audio_to_use
 			)
+		else
+			log_world("TTS play_tts: [listening_mob] out of range dist=[dist] range=[range]")
 
 // Need to wait for all HTTP requests to complete here because of a rustg crash bug
 // that causes crashes when DD restarts while HTTP requests are ongoing.
@@ -257,6 +267,7 @@ SUBSYSTEM_DEF(tts)
 				audio_file = new(current_target.audio_file)
 				if(current_target.audio_file_blips)
 					audio_file_blips = new(current_target.audio_file_blips)
+				log_world("TTS fire: dispatching [current_target.audio_file] target=[tts_target] listeners=[length(current_target.listeners)] language=[current_target.language]")
 				play_tts(tts_target, current_target.listeners, audio_file, audio_file_blips, current_target.language, current_target.message_range, current_target.volume_offset)
 				if(length(data) != 1)
 					var/datum/tts_request/next_target = data[2]
