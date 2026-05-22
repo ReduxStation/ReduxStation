@@ -1,3 +1,0 @@
-{
-  "_comment": "Voice catalog is built at gateway startup by introspecting the .onnx.json speaker_id_map files. This stub stays in place so future overrides (custom RVC voices, voice blacklists, per-server renames) have a documented home."
-}

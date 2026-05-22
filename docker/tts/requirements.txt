@@ -1,6 +1,0 @@
-# Piper Python wrapper, ONNX runtime, and aiohttp gateway dependencies. Versions
-# pinned to known-working as of mid-2026. Bump deliberately.
-piper-tts==1.2.0
-onnxruntime==1.20.1
-aiohttp==3.11.10
-numpy==1.26.4
