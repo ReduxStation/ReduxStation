@@ -411,14 +411,20 @@ SUBSYSTEM_DEF(tts)
 	return request.into_response()
 
 /datum/tts_request/proc/requests_errored()
+	var/datum/http_response/primary
 	if(local)
 		if(use_blips && request_blips)
-			return request_blips.into_response().errored
-		return request.into_response().errored
-	if(request.into_response().errored)
+			primary = request_blips.into_response()
+		else
+			primary = request.into_response()
+		return primary.errored
+	primary = request.into_response()
+	if(primary.errored)
 		return TRUE
-	if(request_blips && request_blips.into_response().errored)
-		return TRUE
+	if(request_blips)
+		var/datum/http_response/secondary = request_blips.into_response()
+		if(secondary.errored)
+			return TRUE
 	return FALSE
 
 /datum/tts_request/proc/requests_completed()
