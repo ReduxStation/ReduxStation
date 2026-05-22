@@ -1,0 +1,7 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: tachyon-doppler array and every other COMSIG_GLOB_EXPLOSION listener
+      now actually receive explosion events during normal play. Previously the 
+      signal only fired when an admin had toggled the DebugGame verb on, so all 
+      listeners were silently dead under regular gameplay.
