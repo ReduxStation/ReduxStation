@@ -105,15 +105,20 @@ SUBSYSTEM_DEF(tts)
 
 /datum/controller/subsystem/tts/Initialize()
 	if(!CONFIG_GET(string/tts_http_url))
-		return SS_INIT_NO_NEED
+		// No backend configured. Mark ourselves SS_NO_FIRE so we never wake,
+		// and chain to the parent Initialize so .initialized = TRUE (the
+		// subsystem_init unit test asserts on that).
+		flags |= SS_NO_FIRE
+		return ..()
 
 	queued_http_messages = new /datum/Heap(GLOBAL_PROC_REF(cmp_word_length_asc))
 	max_concurrent_requests = CONFIG_GET(number/tts_max_concurrent_requests)
 	if(!establish_connection_to_tts())
 		log_world("TTS subsystem failed to connect to gateway at [CONFIG_GET(string/tts_http_url)], disabling for the round.")
-		return SS_INIT_FAILURE
+		flags |= SS_NO_FIRE
+		return ..()
 	log_world("TTS subsystem connected, [length(available_speakers)] voices available, pitch [pitch_enabled ? "ON" : "OFF"].")
-	return SS_INIT_SUCCESS
+	return ..()
 
 /datum/controller/subsystem/tts/proc/play_tts(target, list/listeners, sound/audio, sound/audio_blips, datum/language/language, range = 7, volume_offset = 0)
 	var/turf/turf_source = get_turf(target)
