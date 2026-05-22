@@ -1,11 +1,12 @@
 name: Linters
 
 on:
+  # Push trigger constrained to master so feature-branch pushes do not fire BOTH
+  # this workflow and the pull_request copy for the same commit. Master gets
+  # coverage on merge; PRs get coverage via pull_request below. No double-fire.
   push:
-    branches-ignore:
-      - '___TGS3TempBranch'
-      - '___TGSTempBranch'
-      - '___TGSUpdateBranch'
+    branches:
+      - master
   pull_request:
     branches-ignore:
       - '___TGS3TempBranch'
