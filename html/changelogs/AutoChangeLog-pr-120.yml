@@ -1,0 +1,7 @@
+author: s950tx16wasr10
+delete-after: true
+changes:
+  - bugfix: the tachyon-doppler array now speaks the explosion report for every 
+      detonation it picks up. Previously it only spoke when the bomb had been 
+      capped by the explosion-radius limit; uncapped bombs went silent (though 
+      the on-screen log was still populated).
