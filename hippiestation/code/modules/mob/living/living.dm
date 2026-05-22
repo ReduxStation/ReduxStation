@@ -63,12 +63,9 @@
 
 	return ..()
 
-/mob/living/proc/update_tts_hud()
-	if (!hud_used)
-		return
-	if (!hud_used.tts)
-		return
-	hud_used.tts.icon_state = "tts_ready"
+// update_tts_hud (toggled the TTS ready/cooldown HUD icon for the old mimic1 TTS)
+// was here. The new TTS subsystem has no HUD indicator; cooldown enforcement is
+// handled by the per-speaker queue inside SStts.
 
 /mob/living/resist()
 	..()

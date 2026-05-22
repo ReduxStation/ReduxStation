@@ -1,11 +1,4 @@
-/client/add_admin_verbs()
-	. = ..()
-	if (holder)
-		var/rights = holder.rank.rights
-		if(rights & R_SOUND)
-			if(CONFIG_GET(flag/enable_tts))
-				verbs += /client/proc/play_tts
-
-/client/remove_admin_verbs()
-	. = ..()
-	verbs.Remove(/client/proc/play_tts)
+// The HippieStation-era add/remove for the "Fun > Play TTS" admin verb lived here.
+// The new TTS verbs (Reestablish TTS Connection / Test TTS) live in
+// code/modules/admin/verbs/tts.dm and are gated by check_rights(R_DEBUG) inside
+// each verb body, so no add/remove plumbing is needed.

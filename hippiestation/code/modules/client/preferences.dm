@@ -11,7 +11,6 @@
 	var/list/chosen_gear
 	var/gear_tab
 	var/hippie_toggles = HIPPIE_TOGGLES_DEFAULT // our own toggles.
-	var/voice
 
 /datum/preferences/New(client/C)
 	..()
@@ -37,15 +36,8 @@
 					new_ipc_screen = input(user, "Choose your character's screen:", "Character Preference") as null|anything in GLOB.ipc_screens_list
 					if(new_ipc_screen)
 						features["ipc_screen"] = new_ipc_screen
-				if("voice")
-					var/list/voices = ((gender == FEMALE) ? splittext(CONFIG_GET(string/tts_voice_female), ",") : splittext(CONFIG_GET(string/tts_voice_male), ","))
-					var/new_voice = input(user, "Choose your character's TTS voice:", "Character Preference") as null|anything in voices
-					if(new_voice)
-						voice = new_voice
 		else
 			switch(href_list["preference"])
-				if("hear_tts")
-					hippie_toggles ^= SOUND_TTS
 				if("hear_footsteps")
 					hippie_toggles ^= SOUND_FOOTSTEPS
 				if("hear_vox")
@@ -82,7 +74,6 @@
 			. += "<table><tr><td width='340px' height='300px' valign='top'>"
 			. += "<h2>Hippie OOC Settings</h2>"
 
-			. += "<b>Play Text-to-Speech:</b> <a href='?_src_=prefs;preference=hear_tts'>[(hippie_toggles & SOUND_TTS) ? "Enabled":"Disabled"]</a><br>" // let user toggle TTS sounds
 			. += "<b>Play Footsteps:</b> <a href='?_src_=prefs;preference=hear_footsteps'>[(hippie_toggles & SOUND_FOOTSTEPS) ? "Enabled":"Disabled"]</a><br>" // let user toggle footsteps
 			. += "<b>Play AI Vox:</b> <a href='?_src_=prefs;preference=hear_vox'>[(hippie_toggles & SOUND_VOX) ? "Enabled":"Disabled"]</a><br>" // let user toggle AI vox
 
@@ -148,7 +139,7 @@
 			if(L[slot_to_string(slot)] < DEFAULT_SLOT_AMT)
 				return TRUE
 
-/datum/preferences/copy_to(mob/living/carbon/human/character, icon_updates, roundstart_checks)
-	. = ..()
-	if(character.dna && voice)
-		character.dna.tts_voice = voice
+// The HippieStation copy_to override that copied the saved tts voice onto dna
+// is gone. The new TTS subsystem assigns voice on /atom/movable directly in
+// /mob/living/carbon/human/Initialize. Phase 2 will add a savefile-backed voice
+// preference; until then, voices are randomized per body.
