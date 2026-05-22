@@ -28,6 +28,12 @@
 	RegisterSignal(src, COMSIG_COMPONENT_CLEAN_ACT, PROC_REF(clean_blood))
 	AddComponent(/datum/component/personal_crafting)
 
+	// Random TTS voice on spawn. Gender-aware so the catalog matches DNA. SStts
+	// returns null when TTS is disabled, in which case voice stays unset and
+	// /mob/living/say_tts early-returns without firing a request.
+	if(SStts && SStts.tts_enabled && !voice)
+		voice = SStts.random_tts_voice(gender)
+
 /mob/living/carbon/human/proc/setup_human_dna()
 	//initialize dna. for spawned humans; overwritten by other code
 	create_dna(src)
