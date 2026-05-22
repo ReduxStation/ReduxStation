@@ -19,4 +19,8 @@
 /client/verb/ping()
 	set name = "Ping"
 	set category = "OOC"
-	winset(src, null, "command=.display_ping+[world.time+world.tick_lag*TICK_USAGE_REAL/100]")
+	// See server_maint.dm:72 for why num2text(..., 20) is required here.
+	// BYOND's default `[N]` interpolation flips to scientific notation past
+	// ~1e6 (world.time after ~28 hours), which the verb's `time as num` arg
+	// parser rejects, so the command line echoes to chat instead of firing.
+	winset(src, null, "command=.display_ping+[num2text(world.time + world.tick_lag * TICK_USAGE_REAL / 100, 20)]")
