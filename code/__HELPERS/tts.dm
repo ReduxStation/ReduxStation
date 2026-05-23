@@ -10,9 +10,20 @@
 /// html-encodes apostrophes (`'` -> `&#39;`), less-than (`<` -> `&lt;`), and so
 /// on. Piper reads those literally ("thirty nine" for `&#39;`), so html_decode
 /// first to recover the user's actual characters before the regex strip.
+///
+/// Piper treats short all-uppercase tokens as acronyms and spells them out
+/// ("IT" -> "I.T"). For a fully-shouted message we lowercase the whole thing
+/// so "WE ARE GOING TO MAKE IT" reads as a sentence. Messages with any
+/// lowercase letter are left alone, which preserves mixed-case acronyms like
+/// "Call NASA now".
 /proc/tts_speech_filter(text)
 	var/static/regex/bad_chars_regex = regex("\[^a-zA-Z0-9 ,?.!'&-]", "g")
-	return bad_chars_regex.Replace(html_decode(text), " ")
+	var/static/regex/has_lowercase = regex("\[a-z]")
+	var/static/regex/has_letter = regex("\[A-Za-z]")
+	text = html_decode(text)
+	if(has_letter.Find(text) && !has_lowercase.Find(text))
+		text = lowertext(text)
+	return bad_chars_regex.Replace(text, " ")
 
 /// Substitute the templating tokens used by the gateway's ffmpeg filter strings,
 /// then URL-encode for safe transit in a query parameter.
