@@ -31,7 +31,11 @@
 	// Random TTS voice on spawn. Gender-aware so the catalog matches DNA. SStts
 	// returns null when TTS is disabled, in which case voice stays unset and
 	// /mob/living/say_tts early-returns without firing a request.
-	if(SStts && SStts.tts_enabled && !voice)
+	//
+	// Re-roll if the persisted voice is not in the live catalog. This catches
+	// the gateway-engine-swap case (round that started under Piper now talking
+	// to a Kokoro gateway, old "LibriTTS 0123" labels no longer exist).
+	if(SStts && SStts.tts_enabled && (!voice || !(voice in SStts.available_speakers)))
 		voice = SStts.random_tts_voice(gender)
 
 /mob/living/carbon/human/proc/setup_human_dna()

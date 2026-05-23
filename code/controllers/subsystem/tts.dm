@@ -296,9 +296,20 @@ SUBSYSTEM_DEF(tts)
 
 	var/shell_scrubbed_input = tts_speech_filter(message)
 	shell_scrubbed_input = copytext(shell_scrubbed_input, 1, 300)
-	var/identifier = "[sha1(speaker + filter + num2text(pitch) + special_filters + shell_scrubbed_input)].[world.time]"
+	// Self-heal stale speaker labels (e.g. after a gateway engine swap mid-round).
+	// If the mob's voice no longer exists in the catalog, re-roll on the mob and
+	// keep going. Without this, queue_tts_message silently drops every message
+	// from every mob that initialized under the old catalog.
 	if(!(speaker in available_speakers))
-		return
+		if(ismob(target))
+			var/mob/M = target
+			var/new_voice = random_tts_voice(M.gender)
+			if(new_voice)
+				M.voice = new_voice
+				speaker = new_voice
+		if(!(speaker in available_speakers))
+			return
+	var/identifier = "[sha1(speaker + filter + num2text(pitch) + special_filters + shell_scrubbed_input)].[world.time]"
 
 	var/list/headers = list()
 	headers["Content-Type"] = "application/json"
