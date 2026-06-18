@@ -25,3 +25,23 @@
 
 #define rustg_log_write(fname, text, format) RUSTG_CALL(RUST_G, "log_write")(fname, text, format)
 /proc/rustg_log_close_all() return RUSTG_CALL(RUST_G, "log_close_all")()
+
+// http feature, built into librust_g.so alongside dmi and log. Used by /datum/http_request
+// (code/datums/http.dm) and the TTS subsystem. Backed by ureq + rustls, no system openssl needed.
+#define RUSTG_HTTP_METHOD_GET "get"
+#define RUSTG_HTTP_METHOD_PUT "put"
+#define RUSTG_HTTP_METHOD_DELETE "delete"
+#define RUSTG_HTTP_METHOD_PATCH "patch"
+#define RUSTG_HTTP_METHOD_HEAD "head"
+#define RUSTG_HTTP_METHOD_POST "post"
+#define rustg_http_request_blocking(method, url, body, headers, options) RUSTG_CALL(RUST_G, "http_request_blocking")(method, url, body, headers, options)
+#define rustg_http_request_async(method, url, body, headers, options) RUSTG_CALL(RUST_G, "http_request_async")(method, url, body, headers, options)
+#define rustg_http_request_fire_and_forget(method, url, body, headers, options) RUSTG_CALL(RUST_G, "http_request_fire_and_forget")(method, url, body, headers, options)
+#define rustg_http_check_request(req_id) RUSTG_CALL(RUST_G, "http_check_request")(req_id)
+#define RUSTG_JOB_NO_RESULTS_YET "NO RESULTS YET"
+#define RUSTG_JOB_ERROR "JOB PANICKED"
+
+// file feature, needed by TTS to bootstrap tmp/tts/init.txt before rustg HTTP can write
+// response bodies into the directory. Pure-rust stdlib, no extra deps.
+#define rustg_file_write(text, fname) RUSTG_CALL(RUST_G, "file_write")(text, fname)
+#define rustg_file_read(fname) RUSTG_CALL(RUST_G, "file_read")(fname)

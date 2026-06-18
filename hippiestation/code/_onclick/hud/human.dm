@@ -4,5 +4,5 @@
 	infodisplay += staminas
 	combo_object = new()
 	infodisplay += combo_object
-	tts = new()
-	infodisplay += tts
+	// HippieStation's TTS HUD indicator (tts_ready / tts_cooldown icon) was added here.
+	// The new TTS subsystem has no HUD element; cooldown is internal to SStts.
