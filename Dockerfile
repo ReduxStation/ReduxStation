@@ -86,7 +86,7 @@ RUN sed -i '/GenericImageError(#\[from\] ImageError)/i\    #[cfg(feature = "dmi"
 RUN cargo build --release \
         --target=i686-unknown-linux-gnu \
         --no-default-features \
-        --features="log dmi"
+        --features="log dmi http file"
 
 RUN cp target/i686-unknown-linux-gnu/release/librust_g.so /librust_g.so
 

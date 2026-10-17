@@ -212,7 +212,9 @@ tools/MapAtmosFixer/MapAtmosFixer/bin/*
 
 #Text to speech
 /hippiestation/tools/tts_generator/*
-tts/
+# Runtime audio cache produced by SStts in DD's CWD. Anchored so docker/tts/
+# (the gateway container build context) and similar nested dirs are not ignored.
+/tts/
 
 # Ignore custom music and title screens (amend as appropriate)
 /config/jukebox_music/sounds/*

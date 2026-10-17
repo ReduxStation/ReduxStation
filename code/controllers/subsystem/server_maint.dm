@@ -16,6 +16,10 @@ SUBSYSTEM_DEF(server_maint)
 /datum/controller/subsystem/server_maint/Initialize(timeofday)
 	if (CONFIG_GET(flag/hub))
 		world.update_hub_visibility(TRUE)
+	// Wipe stale TTS audio left over from the previous round. SStts re-creates
+	// tmp/tts/init.txt during establish_connection_to_tts.
+	if(fexists("tmp/tts/init.txt") || fexists("tmp/tts/"))
+		fdel("tmp/tts/")
 	return ..()
 
 /datum/controller/subsystem/server_maint/fire(resumed = FALSE)
@@ -81,6 +85,10 @@ SUBSYSTEM_DEF(server_maint)
 			return
 
 /datum/controller/subsystem/server_maint/Shutdown()
+	// Wipe TTS audio at the end of the round as well, so a hot-swap reboot leaves
+	// the next round with a clean tmp/tts/.
+	if(fexists("tmp/tts/init.txt") || fexists("tmp/tts/"))
+		fdel("tmp/tts/")
 	kick_clients_in_lobby("<span class='boldannounce'>The round came to an end with you in the lobby.</span>", TRUE) //second parameter ensures only afk clients are kicked
 	var/server = CONFIG_GET(string/server)
 	for(var/thing in GLOB.clients)

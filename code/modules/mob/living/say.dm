@@ -212,6 +212,9 @@ GLOBAL_LIST_INIT(department_radio_keys, list(
 		spans |= SPAN_ITALICS
 
 	send_speech(message, message_range, src, bubble_type, spans, language, message_mode)
+	// TTS hook: fire after send_speech so audio plays on the same hearer set the text
+	// just reached. Internally no-ops if SStts isn't enabled or this mob has no voice.
+	say_tts(message, language, message_mode)
 
 	if(succumbed)
 		succumb(1)

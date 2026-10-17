@@ -1,6 +1,6 @@
 //HUD
 #define ui_stamina	"EAST-1:28,CENTER-3:12"
-#define ui_tts      "EAST-1:28,CENTER-4:12"
+// ui_tts (HippieStation TTS HUD indicator screen anchor) is gone with the new TTS subsystem.
 #define ui_combo	"EAST-4:24,SOUTH+1:7"
 
 //Gremlins

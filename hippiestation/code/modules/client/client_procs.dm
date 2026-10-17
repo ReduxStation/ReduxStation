@@ -40,25 +40,9 @@
 	if(mentor_datum || check_rights_for(src, R_ADMIN,0))
 		return TRUE
 
-/client/proc/play_tts()
-	set category = "Fun"
-	set name = "Play TTS"
-	if(!check_rights(R_SOUND))
-		return
-	if (!CONFIG_GET(flag/enable_tts))
-		to_chat(usr, "<span='warning'>Text-to-Speech is not enabled!</span>")
-		return
-
-	var/input = input(usr, "Please enter a message to send to the server", "Text to Speech", "")
-	if(input)
-		var/datum/tts/T = new /datum/tts()
-		T.say(src, input, is_global=TRUE)
-
-		to_chat(world, "<span class='boldannounce'>An admin used Text-to-Speech: [input]</span>")
-		log_admin("[key_name(src)] used Text-to-Speech: [input]")
-		message_admins("[key_name_admin(src)] used Text-to-Speech: [input]")
-
-		SSblackbox.record_feedback("tally", "admin_verb", 1, "Play TTS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+// The HippieStation "Fun > Play TTS" admin verb (mimic1-era) lived here. The new TTS
+// subsystem ships its own admin verbs under code/modules/admin/verbs/tts.dm
+// (Reestablish TTS Connection / Test TTS), under R_DEBUG.
 
 /client/proc/add_ooc_icons()
 	var/icons = ""

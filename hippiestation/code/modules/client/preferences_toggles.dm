@@ -1,17 +1,6 @@
-TOGGLE_CHECKBOX(/datum/verbs/menu/Settings/Sound, toggletts)()
-	set name = "Hear/Silence Text-to-Speech"
-	set category = "Preferences"
-	set desc = "Hear Any Text-to-Speech Sounds"
-	usr.client.prefs.hippie_toggles ^= SOUND_TTS
-	usr.client.prefs.save_preferences()
-	if(usr.client.prefs.hippie_toggles & SOUND_TTS)
-		to_chat(usr, "You will now hear any text-to-speech sounds.")
-	else
-		to_chat(usr, "You will no longer hear text-to-speech sounds.")
-	SSblackbox.record_feedback("nested tally", "preferences_verb", 1, list("Toggle Hearing Text-to-Speech", "[usr.client.prefs.toggles & SOUND_TTS ? "Enabled" : "Disabled"]")) //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-
-/datum/verbs/menu/Settings/Sound/toggletts/Get_checked(client/C)
-	return C.prefs.hippie_toggles & SOUND_TTS
+// The HippieStation "Hear/Silence Text-to-Speech" toggle (SOUND_TTS bit) lived
+// here. Phase 1 of the new TTS plays for everyone in range by default; per-player
+// off/blips/full toggle lands in Phase 2 alongside per-character voice prefs.
 
 TOGGLE_CHECKBOX(/datum/verbs/menu/Settings/Sound, toggle_footsteps)()
 	set name = "Hear/Silence Footsteps"

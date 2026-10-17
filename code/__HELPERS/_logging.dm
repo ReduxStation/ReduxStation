@@ -187,10 +187,17 @@
 /proc/log_mapping(text)
 	WRITE_LOG(GLOB.world_map_error_log, text)
 
-/* ui logging */ 
- 
+/* ui logging */
+
 /proc/log_tgui(text)
 	WRITE_LOG(GLOB.tgui_log, text)
+
+/* TTS subsystem logging. Phase 1 routes to world.log so failures surface in dd.log.
+ * A dedicated logfile (GLOB.tts_log) can be wired up later with the rest of the SS infrastructure. */
+/proc/log_tts(text, list/context)
+	SEND_TEXT(world.log, "TTS: [text]")
+	if(islist(context) && length(context))
+		SEND_TEXT(world.log, "TTS context: [json_encode(context)]")
 
 /* For logging round startup. */
 /proc/start_log(log)
